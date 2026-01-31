@@ -22,7 +22,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    environment:
+    args:
       DATABASE_URL: postgresql://${POSTGRES_USER:-ytdown}:${POSTGRES_PASSWORD:-ytdown_secret}@postgres:5432/${POSTGRES_DB:-ytdown}?schema=public
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
