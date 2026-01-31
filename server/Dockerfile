@@ -3,14 +3,23 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
+# ===== BUILD ARGS (KLUCZOWE) =====
+ARG DATABASE_URL
+ARG JWT_SECRET
+ARG JWT_REFRESH_SECRET
+
+ENV DATABASE_URL=$DATABASE_URL
+ENV JWT_SECRET=$JWT_SECRET
+ENV JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET
+
 # Copy package files
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
-# Install all dependencies (including devDependencies for build)
+# Install all dependencies (including devDependencies)
 RUN npm ci
 
-# Generate Prisma client
+# Generate Prisma client (WYMAGA DATABASE_URL)
 RUN npx prisma generate
 
 # Copy source and build
@@ -21,7 +30,7 @@ RUN npm run build
 # ---- Production stage ----
 FROM node:20-slim
 
-# Install system dependencies: yt-dlp, ffmpeg, python3
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
@@ -35,12 +44,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# ===== RUNTIME ARGS (opcjonalne, ale spójne) =====
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
+
 # Copy package files and install production deps only
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 RUN npm ci --omit=dev
 
-# Generate Prisma client in production image
+# Generate Prisma client in runtime image
 RUN npx prisma generate
 
 # Copy built files from builder
