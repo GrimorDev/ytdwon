@@ -1,36 +1,8 @@
-# ---- Build stage ----
-FROM node:20-slim AS builder
+FROM node:20-slim
 
 WORKDIR /app
 
-# ===== BUILD ARGS (KLUCZOWE) =====
-ARG DATABASE_URL
-ARG JWT_SECRET
-ARG JWT_REFRESH_SECRET
-
-ENV DATABASE_URL=$DATABASE_URL
-ENV JWT_SECRET=$JWT_SECRET
-ENV JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET
-
-# Copy package files
-COPY package.json package-lock.json* ./
-COPY prisma ./prisma/
-
-# Install all dependencies (including devDependencies)
-RUN npm ci
-
-# Generate Prisma client (WYMAGA DATABASE_URL)
-RUN npx prisma generate
-
-# Copy source and build
-COPY tsconfig.json ./
-COPY src ./src/
-#RUN npm run build
-
-# ---- Production stage ----
-FROM node:20-slim
-
-# Install system dependencies
+# System deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
@@ -38,37 +10,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
   && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-  && chmod a+rx /usr/local/bin/yt-dlp \
-  && apt-get clean \
+  && chmod +x /usr/local/bin/yt-dlp \
   && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
-# ===== RUNTIME ARGS (opcjonalne, ale spójne) =====
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-
-# Copy package files and install production deps only
+# App deps
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
-RUN npm ci --omit=dev
+RUN npm ci
 
-# Generate Prisma client in runtime image
-RUN npx prisma generate
+COPY tsconfig.json ./
+COPY src ./src/
 
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
-
-# Copy entrypoint script
-COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
-
-# Create downloads directory
-RUN mkdir -p /app/downloads
-
+# ENV
 ENV NODE_ENV=production
 ENV PORT=3001
 
 EXPOSE 3001
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+# build + run W RUNTIME
+CMD npx prisma generate && npm run build && node dist/index.js
