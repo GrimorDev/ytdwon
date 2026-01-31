@@ -1,0 +1,18 @@
+{
+  "name": "YTDown - Pobierz wideo i audio",
+  "short_name": "YTDown",
+  "description": "Pobieraj wideo i audio z YouTube, Facebook, Twitter, TikTok, Instagram",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#dc2626",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

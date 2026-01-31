@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+}
+
+enum Platform {
+  YOUTUBE
+  FACEBOOK
+  TWITTER
+  TIKTOK
+  INSTAGRAM
+}
+
+enum DownloadFormat {
+  VIDEO
+  AUDIO
+}
+
+model User {
+  id               String     @id @default(uuid())
+  email            String     @unique
+  password         String
+  name             String
+  plan             Plan       @default(FREE)
+  stripeCustomerId String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  downloads        Download[]
+}
+
+model Download {
+  id           String         @id @default(uuid())
+  userId       String?
+  user         User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url          String
+  platform     Platform
+  title        String
+  thumbnailUrl String?
+  format       DownloadFormat
+  quality      String
+  filename     String
+  createdAt    DateTime       @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}

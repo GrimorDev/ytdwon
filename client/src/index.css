@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark theme (default) */
+html.dark body {
+  @apply bg-gray-950 text-gray-100;
+}
+
+/* Light theme */
+html.light body {
+  @apply bg-gray-50 text-gray-900;
+}
+
+body {
+  @apply min-h-screen;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply font-semibold py-2.5 px-6 rounded-lg transition-colors duration-200;
+  }
+
+  /* Dark */
+  html.dark .btn-secondary {
+    @apply bg-gray-700 hover:bg-gray-600 text-white;
+  }
+  html.dark .input-field {
+    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all;
+  }
+  html.dark .card {
+    @apply bg-gray-900 border border-gray-800 rounded-xl p-6;
+  }
+  html.dark .nav-bar {
+    @apply bg-gray-900 border-b border-gray-800;
+  }
+  html.dark .footer-bar {
+    @apply border-t border-gray-800 text-gray-500;
+  }
+
+  /* Light */
+  html.light .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-900;
+  }
+  html.light .input-field {
+    @apply w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all;
+  }
+  html.light .card {
+    @apply bg-white border border-gray-200 rounded-xl p-6 shadow-sm;
+  }
+  html.light .nav-bar {
+    @apply bg-white border-b border-gray-200 shadow-sm;
+  }
+  html.light .footer-bar {
+    @apply border-t border-gray-200 text-gray-500;
+  }
+}
