@@ -25,7 +25,7 @@ RUN npx prisma generate
 # Copy source and build
 COPY tsconfig.json ./
 COPY src ./src/
-RUN npm run build
+#RUN npm run build
 
 # ---- Production stage ----
 FROM node:20-slim
