@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -17,18 +17,23 @@ services:
       retries: 5
 
   server:
-    build: ./server
+    build:
+      context: ./server
+      args:
+        DATABASE_URL: postgresql://${POSTGRES_USER:-ytdown}:${POSTGRES_PASSWORD:-ytdown_secret}@postgres:5432/${POSTGRES_DB:-ytdown}?schema=public
+        JWT_SECRET: ${JWT_SECRET:-devsecret}
+        JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-devrefresh}
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-    args:
+    environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-ytdown}:${POSTGRES_PASSWORD:-ytdown_secret}@postgres:5432/${POSTGRES_DB:-ytdown}?schema=public
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID}
+      JWT_SECRET: ${JWT_SECRET:-devsecret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-devrefresh}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:-}
       CLIENT_URL: ${CLIENT_URL:-http://localhost}
       PORT: 3001
       NODE_ENV: production
@@ -36,7 +41,10 @@ services:
       - downloads:/app/downloads
 
   client:
-    build: ./client
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: http://server:3001
     restart: unless-stopped
     depends_on:
       - server
