@@ -47,8 +47,6 @@ RUN npx prisma generate
 
 COPY --from=builder /app/dist ./dist
 
-COPY yt-auth.txt /app/cookies.txt
-
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && sed -i 's/\r$//' docker-entrypoint.sh
 
