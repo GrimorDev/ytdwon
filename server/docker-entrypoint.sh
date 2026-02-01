@@ -39,6 +39,11 @@ echo ""
 
 echo "[yt-dlp] Version: $(yt-dlp --version 2>/dev/null || echo 'unknown')"
 
+# Diagnostic: check if bgutil plugin is loaded by yt-dlp
+echo "[yt-dlp] Checking plugins..."
+python3 -c "import bgutil_ytdlp_pot_provider; print('[yt-dlp] bgutil plugin: INSTALLED')" 2>/dev/null || echo "[yt-dlp] bgutil plugin: NOT FOUND"
+yt-dlp --list-pot-providers 2>&1 | head -20 || echo "[yt-dlp] --list-pot-providers not supported"
+
 echo "Running Prisma migrations..."
 npx prisma migrate deploy
 
