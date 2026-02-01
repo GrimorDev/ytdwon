@@ -12,8 +12,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Search,
+  ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const platformColors: Record<string, string> = {
   YOUTUBE: 'bg-red-500/20 text-red-400',
@@ -23,26 +26,51 @@ const platformColors: Record<string, string> = {
   INSTAGRAM: 'bg-purple-500/20 text-purple-400',
 };
 
+const PLATFORMS = ['YOUTUBE', 'FACEBOOK', 'TWITTER', 'TIKTOK', 'INSTAGRAM'];
+
 export default function HistoryPage() {
   const { user } = useAuth();
   const { t, lang } = useTranslation();
+  const navigate = useNavigate();
   const [downloads, setDownloads] = useState<Download[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [platform, setPlatform] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  const fetchHistory = (p: number, s: string, plat: string) => {
     if (!user) return;
     setLoading(true);
     historyApi
-      .getAll(page)
+      .getAll(p, 20, s || undefined, plat || undefined)
       .then(({ data }) => {
         setDownloads(data.downloads);
         setTotalPages(data.pagination.totalPages);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [page, user]);
+  };
+
+  useEffect(() => {
+    fetchHistory(page, search, platform);
+  }, [page, user, platform]);
+
+  // Debounced search
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    if (searchTimeout) clearTimeout(searchTimeout);
+    setSearchTimeout(setTimeout(() => {
+      setPage(1);
+      fetchHistory(1, val, platform);
+    }, 400));
+  };
+
+  const handlePlatformChange = (val: string) => {
+    setPlatform(val);
+    setPage(1);
+  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -51,6 +79,19 @@ export default function HistoryPage() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleRedownload = (dl: Download) => {
+    // Navigate to the appropriate platform page with the URL pre-loaded
+    const platformRoute: Record<string, string> = {
+      YOUTUBE: '/',
+      FACEBOOK: '/facebook',
+      TWITTER: '/twitter',
+      TIKTOK: '/tiktok',
+      INSTAGRAM: '/instagram',
+    };
+    const route = platformRoute[dl.platform] || '/';
+    navigate(route, { state: { prefillUrl: dl.url } });
   };
 
   if (!user) {
@@ -66,10 +107,34 @@ export default function HistoryPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
+      <h1 className="text-3xl font-bold mb-6 flex items-center gap-3">
         <History className="w-8 h-8 text-red-500" />
         {t.downloadHistory}
       </h1>
+
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder={t.searchHistory}
+            className="input-field w-full !pl-10"
+          />
+        </div>
+        <select
+          value={platform}
+          onChange={(e) => handlePlatformChange(e.target.value)}
+          className="input-field !w-auto min-w-[160px]"
+        >
+          <option value="">{t.allPlatforms}</option>
+          {PLATFORMS.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
@@ -106,9 +171,16 @@ export default function HistoryPage() {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => handleRedownload(dl)}
+                    className="text-gray-400 hover:text-green-400 transition-colors p-2"
+                    title={t.redownload}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
                   <a href={dl.url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors p-2" title={t.openSource}>
-                    <DownloadIcon className="w-4 h-4" />
+                    <ExternalLink className="w-4 h-4" />
                   </a>
                   <button onClick={() => handleDelete(dl.id)} className="text-gray-400 hover:text-red-400 transition-colors p-2" title={t.deleteFromHistory}>
                     <Trash2 className="w-4 h-4" />

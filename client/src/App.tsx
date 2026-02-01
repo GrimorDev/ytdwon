@@ -33,7 +33,7 @@ export default function App() {
       </main>
 
       <footer className="footer-bar py-6 text-center text-sm">
-        <p>YTDown &copy; {new Date().getFullYear()} - {t.footer}</p>
+        <p>Vipile &copy; {new Date().getFullYear()} - {t.footer}</p>
       </footer>
     </div>
   );

@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Search, Download, Music, Film, Loader2, AlertCircle, Crown,
   Play, Plus, ListOrdered, CheckCircle2, XCircle, Headphones,
+  Image, Scissors, List, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { downloadApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -30,6 +31,17 @@ interface QueueEntry {
 export default function DownloadForm({ platform, placeholder, accentColor }: Props) {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const location = useLocation();
+
+  // Pre-fill URL from history re-download
+  useEffect(() => {
+    const state = location.state as { prefillUrl?: string } | null;
+    if (state?.prefillUrl) {
+      setUrl(state.prefillUrl);
+      // Clear state so it doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const statusLabels: Record<string, string> = {
     queued: t.statusQueued,
@@ -49,6 +61,20 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Batch mode
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchUrls, setBatchUrls] = useState('');
+
+  // Trim
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [trimStart, setTrimStart] = useState('');
+  const [trimEnd, setTrimEnd] = useState('');
+
+  // Thumbnail
+  const [thumbLoading, setThumbLoading] = useState(false);
+
+  const isPremium = user?.plan === 'PREMIUM';
+
   const fetchInfo = async () => {
     if (!url.trim()) return;
     setError('');
@@ -59,7 +85,6 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
     try {
       const { data } = await downloadApi.getInfo(url);
       setInfo(data);
-      const isPremium = user?.plan === 'PREMIUM';
       const freeFormats = data.formats.filter((f) => {
         if (f.isAudioOnly) return false;
         if (isPremium) return true;
@@ -92,11 +117,12 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
         quality,
         isAudio,
         outputFormat,
+        trimStart: trimStart || undefined,
+        trimEnd: trimEnd || undefined,
       });
 
       const jobId = data.jobId;
 
-      // Create/update queue entry
       const queueId = entry?.id || `q-${Date.now()}`;
       const newEntry: QueueEntry = entry || {
         id: queueId,
@@ -113,7 +139,6 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
         setQueue((prev) => [newEntry, ...prev]);
       }
 
-      // Subscribe to SSE progress
       downloadApi.subscribeProgress(jobId, (jobData) => {
         setQueue((prev) =>
           prev.map((q) =>
@@ -123,7 +148,6 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
           )
         );
 
-        // Auto-download when done
         if (jobData.status === 'done' && jobData.filename) {
           const a = document.createElement('a');
           a.href = downloadApi.getFileUrl(jobData.filename);
@@ -136,7 +160,7 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
     } catch (err: any) {
       setError(err.response?.data?.error || t.downloadFailed);
     }
-  }, [url, selectedFormat, info]);
+  }, [url, selectedFormat, info, trimStart, trimEnd]);
 
   const addToQueue = () => {
     if (!selectedFormat || !url || !info) return;
@@ -154,6 +178,83 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
     startDownload(entry);
   };
 
+  // Batch download
+  const startBatchDownload = async () => {
+    const urls = batchUrls.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+    if (urls.length === 0) return;
+
+    const maxBatch = isPremium ? 999 : 5;
+    if (urls.length > maxBatch) {
+      setError(t.batchLimit);
+      return;
+    }
+
+    setError('');
+
+    for (const batchUrl of urls) {
+      const entry: QueueEntry = {
+        id: `q-${Date.now()}-${Math.random()}`,
+        url: batchUrl,
+        quality: '1080',
+        isAudio: false,
+        outputFormat: 'mp4',
+        job: null,
+        title: batchUrl.substring(0, 50),
+        thumbnail: '',
+      };
+      setQueue((prev) => [entry, ...prev]);
+
+      try {
+        const { data } = await downloadApi.start({
+          url: batchUrl,
+          quality: '1080',
+          isAudio: false,
+          outputFormat: 'mp4',
+        });
+
+        downloadApi.subscribeProgress(data.jobId, (jobData) => {
+          setQueue((prev) =>
+            prev.map((q) =>
+              q.id === entry.id
+                ? { ...q, job: jobData, title: jobData.title || q.title, thumbnail: jobData.thumbnail || q.thumbnail }
+                : q
+            )
+          );
+
+          if (jobData.status === 'done' && jobData.filename) {
+            const a = document.createElement('a');
+            a.href = downloadApi.getFileUrl(jobData.filename);
+            a.download = `${jobData.title}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+        });
+      } catch {}
+    }
+
+    setBatchUrls('');
+  };
+
+  // Thumbnail download
+  const handleThumbnail = async () => {
+    if (!url) return;
+    setThumbLoading(true);
+    try {
+      const { data } = await downloadApi.downloadThumbnail(url);
+      const a = document.createElement('a');
+      a.href = downloadApi.getFileUrl(data.filename);
+      a.download = `${info?.title || 'thumbnail'}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      setError('Thumbnail download failed');
+    } finally {
+      setThumbLoading(false);
+    }
+  };
+
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '';
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -163,7 +264,7 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
   const isQualityLocked = (format: FormatInfo) => {
     if (format.isAudioOnly) return false;
     const height = parseInt(format.quality);
-    return height > 1080 && (!user || user.plan !== 'PREMIUM');
+    return height > 1080 && !isPremium;
   };
 
   const getEmbedUrl = (videoUrl: string) => {
@@ -184,25 +285,74 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* URL Input */}
-      <div className="flex gap-3 mb-6">
-        <input
-          type="url"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && fetchInfo()}
-          placeholder={placeholder}
-          className="input-field flex-1"
-        />
+      {/* Mode Toggle */}
+      <div className="flex items-center gap-2 mb-3">
         <button
-          onClick={fetchInfo}
-          disabled={loading || !url.trim()}
-          className={`${accentColor} text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
+          onClick={() => setBatchMode(false)}
+          className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+            !batchMode ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+          }`}
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-          <span className="hidden sm:inline">{t.search}</span>
+          {t.singleMode}
+        </button>
+        <button
+          onClick={() => setBatchMode(true)}
+          className={`text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${
+            batchMode ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+          }`}
+        >
+          <List className="w-3.5 h-3.5" />
+          {t.batchMode}
         </button>
       </div>
+
+      {/* Single URL Input */}
+      {!batchMode && (
+        <div className="flex gap-3 mb-6">
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && fetchInfo()}
+            placeholder={placeholder}
+            className="input-field flex-1"
+          />
+          <button
+            onClick={fetchInfo}
+            disabled={loading || !url.trim()}
+            className={`${accentColor} text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+            <span className="hidden sm:inline">{t.search}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Batch URL Input */}
+      {batchMode && (
+        <div className="mb-6">
+          <textarea
+            value={batchUrls}
+            onChange={(e) => setBatchUrls(e.target.value)}
+            placeholder={t.batchPlaceholder}
+            rows={5}
+            className="input-field w-full resize-none mb-3"
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500">
+              {isPremium ? t.batchLimitPremium : t.batchLimit}
+            </p>
+            <button
+              onClick={startBatchDownload}
+              disabled={!batchUrls.trim()}
+              className={`${accentColor} text-white font-semibold py-2 px-6 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2`}
+            >
+              <Download className="w-4 h-4" />
+              {t.download} ({batchUrls.split('\n').filter(u => u.trim()).length})
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -213,7 +363,7 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
       )}
 
       {/* Video Info */}
-      {info && (
+      {info && !batchMode && (
         <div className="card">
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             {/* Thumbnail / Preview */}
@@ -256,15 +406,28 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
                 </p>
               )}
               <p className="text-gray-500 text-xs mt-1 uppercase">{info.platform}</p>
-              {info.isPlaylist && (
+
+              {/* Quick actions */}
+              <div className="flex items-center gap-2 mt-3">
+                {info.isPlaylist && (
+                  <button
+                    onClick={() => setShowPlaylistModal(true)}
+                    className="flex items-center gap-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-lg text-sm transition-colors"
+                  >
+                    <ListOrdered className="w-4 h-4" />
+                    {t.playlist}: {info.playlistCount} {t.playlistClickToSelect}
+                  </button>
+                )}
+                {/* Thumbnail download */}
                 <button
-                  onClick={() => setShowPlaylistModal(true)}
-                  className="mt-2 flex items-center gap-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-lg text-sm transition-colors"
+                  onClick={handleThumbnail}
+                  disabled={thumbLoading}
+                  className="flex items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-lg text-xs transition-colors"
                 >
-                  <ListOrdered className="w-4 h-4" />
-                  {t.playlist}: {info.playlistCount} {t.playlistClickToSelect}
+                  {thumbLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Image className="w-3.5 h-3.5" />}
+                  {t.downloadThumbnail}
                 </button>
-              )}
+              </div>
             </div>
           </div>
 
@@ -278,7 +441,7 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
               <div className="flex gap-2 flex-wrap">
                 {info.formats.filter((f) => f.isAudioOnly).map((format) => {
                   const isPremiumFormat = format.ext === 'wav' || format.ext === 'flac';
-                  const locked = isPremiumFormat && (!user || user.plan !== 'PREMIUM');
+                  const locked = isPremiumFormat && !isPremium;
                   return (
                     <button
                       key={`${format.formatId}-${format.ext}`}
@@ -308,10 +471,10 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
 
           {/* Format Selection - Video (hide for playlists) */}
           {!info.isPlaylist && (
-            <div className="mb-6">
+            <div className="mb-4">
               <h4 className="text-sm font-medium text-gray-400 mb-2 flex items-center gap-1.5">
                 <Film className="w-4 h-4" />
-                Wideo:
+                {t.video}:
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {info.formats.filter((f) => !f.isAudioOnly).map((format) => {
@@ -349,7 +512,49 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
             </div>
           )}
 
-          {/* Download Button (hide for playlists - they use the modal) */}
+          {/* Advanced Options (Trim) */}
+          {!info.isPlaylist && (
+            <div className="mb-4">
+              <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-300 transition-colors"
+              >
+                <Scissors className="w-4 h-4" />
+                {t.advancedOptions}
+                {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+
+              {showAdvanced && (
+                <div className="mt-3 p-4 bg-gray-900/50 rounded-lg border border-gray-800">
+                  <div className="flex gap-4 items-end">
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 block mb-1">{t.trimStart}</label>
+                      <input
+                        type="text"
+                        value={trimStart}
+                        onChange={(e) => setTrimStart(e.target.value)}
+                        placeholder="0:00"
+                        className="input-field !py-2 text-sm"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 block mb-1">{t.trimEnd}</label>
+                      <input
+                        type="text"
+                        value={trimEnd}
+                        onChange={(e) => setTrimEnd(e.target.value)}
+                        placeholder={info.duration > 0 ? `${Math.floor(info.duration / 60)}:${String(Math.floor(info.duration % 60)).padStart(2, '0')}` : '5:00'}
+                        className="input-field !py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">{t.trimFreeLimit}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Download Button (hide for playlists) */}
           {!info.isPlaylist && (
             <>
               {selectedFormat && isQualityLocked(selectedFormat) ? (
@@ -370,6 +575,11 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
                   {t.download} {selectedFormat?.isAudioOnly ? selectedFormat.ext?.toUpperCase() || 'MP3' : t.video}
                   {selectedFormat && !selectedFormat.isAudioOnly && (
                     <span className="text-sm opacity-75">({selectedFormat.quality})</span>
+                  )}
+                  {(trimStart || trimEnd) && (
+                    <span className="text-sm opacity-75">
+                      <Scissors className="w-3.5 h-3.5 inline" /> {trimStart || '0:00'}-{trimEnd || 'end'}
+                    </span>
                   )}
                 </button>
               )}
@@ -405,6 +615,13 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
                       {entry.isAudio ? entry.outputFormat.toUpperCase() : `${entry.quality}p`}
                       {' · '}
                       {entry.job ? statusLabels[entry.job.status] || entry.job.status : t.starting}
+                      {/* Speed & ETA */}
+                      {entry.job?.speed && entry.job.status === 'downloading' && (
+                        <span className="ml-2 text-blue-400">
+                          {entry.job.speed}
+                          {entry.job.eta && ` · ${t.etaLabel} ${entry.job.eta}`}
+                        </span>
+                      )}
                     </p>
                   </div>
 
@@ -463,7 +680,7 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
           playlistCount={info.playlistCount || 0}
           onClose={() => setShowPlaylistModal(false)}
           accentColor={accentColor}
-          isPremium={user?.plan === 'PREMIUM'}
+          isPremium={isPremium}
         />
       )}
     </div>

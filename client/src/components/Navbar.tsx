@@ -37,7 +37,7 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-2">
             <Download className="w-6 h-6 text-red-500" />
             <span className="text-xl font-bold">
-              YT<span className="text-red-500">Down</span>
+              Vipi<span className="text-red-500">le</span>
             </span>
           </Link>
 

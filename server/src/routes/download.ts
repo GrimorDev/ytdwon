@@ -11,6 +11,7 @@ import {
   getPlaylistItems,
   downloadPlaylistItems,
   getPlaylistJob,
+  downloadThumbnail,
 } from '../services/downloadService';
 import { AppError } from '../middleware/errorHandler';
 
@@ -39,7 +40,7 @@ router.post('/info', async (req: AuthRequest, res: Response, next) => {
 // Start download - returns jobId for SSE tracking
 router.post('/start', authOptional, attachUserPlan, async (req: AuthRequest, res: Response, next) => {
   try {
-    const { url, quality, isAudio, outputFormat } = req.body;
+    const { url, quality, isAudio, outputFormat, trimStart, trimEnd } = req.body;
     if (!url) throw new AppError(400, 'URL is required');
 
     const maxQuality = req.userPlan === 'PREMIUM' ? 8640 : 1080;
@@ -49,11 +50,26 @@ router.post('/start', authOptional, attachUserPlan, async (req: AuthRequest, res
       throw new AppError(403, 'Formaty WAV i FLAC dostepne tylko w planie Premium. Plan Free obsluguje MP3.');
     }
 
+    // Enforce trim limits for free users (max 5 min)
+    if (trimStart || trimEnd) {
+      if (req.userPlan !== 'PREMIUM') {
+        const parseTime = (t: string): number => {
+          const parts = t.split(':').map(Number);
+          return parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0];
+        };
+        const start = trimStart ? parseTime(trimStart) : 0;
+        const end = trimEnd ? parseTime(trimEnd) : start + 300;
+        if ((end - start) > 300) {
+          throw new AppError(403, 'Free plan allows max 5 minute trim. Upgrade to Premium for unlimited.');
+        }
+      }
+    }
+
     const jobId = uuidv4();
     const format = outputFormat || (isAudio ? 'mp3' : 'mp4');
 
     // Start download in background
-    const downloadPromise = downloadWithProgress(jobId, url, quality || '1080', isAudio || false, format, maxQuality);
+    const downloadPromise = downloadWithProgress(jobId, url, quality || '1080', isAudio || false, format, maxQuality, trimStart, trimEnd);
 
     // Save to history when done
     downloadPromise.then(async (result) => {
@@ -222,6 +238,19 @@ router.get('/playlist/progress/:jobId', (req, res) => {
   req.on('close', () => {
     downloadEmitter.off('playlist-progress', onProgress);
   });
+});
+
+// Download thumbnail
+router.post('/thumbnail', async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { url } = req.body;
+    if (!url) throw new AppError(400, 'URL is required');
+
+    const result = await downloadThumbnail(url);
+    res.json({ filename: result.filename });
+  } catch (err: any) {
+    next(err);
+  }
 });
 
 export { router as downloadRouter };

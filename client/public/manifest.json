@@ -1,6 +1,6 @@
 {
-  "name": "YTDown - Pobierz wideo i audio",
-  "short_name": "YTDown",
+  "name": "Vipile - Download video & audio",
+  "short_name": "Vipile",
   "description": "Pobieraj wideo i audio z YouTube, Facebook, Twitter, TikTok, Instagram",
   "start_url": "/",
   "display": "standalone",

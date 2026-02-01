@@ -65,6 +65,8 @@ interface DownloadJob {
   format: string; // output format: mp3, mp4, wav, flac, webm, avi
   status: 'queued' | 'fetching_info' | 'downloading' | 'converting' | 'done' | 'error';
   progress: number;
+  speed?: string;
+  eta?: string;
   title: string;
   thumbnail: string;
   platform: Platform;
@@ -118,11 +120,26 @@ function isValidUrl(url: string): boolean {
   }
 }
 
-function parseProgress(line: string): number | null {
+interface ProgressInfo {
+  percent: number;
+  speed?: string;
+  eta?: string;
+}
+
+function parseProgress(line: string): ProgressInfo | null {
   // yt-dlp outputs lines like: [download]  45.2% of ~5.30MiB at  2.50MiB/s ETA 00:02
   const match = line.match(/\[download\]\s+([\d.]+)%/);
-  if (match) return parseFloat(match[1]);
-  return null;
+  if (!match) return null;
+
+  const result: ProgressInfo = { percent: parseFloat(match[1]) };
+
+  const speedMatch = line.match(/at\s+([\d.]+\S+\/s)/);
+  if (speedMatch) result.speed = speedMatch[1];
+
+  const etaMatch = line.match(/ETA\s+(\S+)/);
+  if (etaMatch) result.eta = etaMatch[1];
+
+  return result;
 }
 
 // ==================== Audio format mapping ====================
@@ -241,6 +258,8 @@ export async function downloadWithProgress(
   isAudio: boolean,
   outputFormat: string,
   maxQuality: number,
+  trimStart?: string,
+  trimEnd?: string,
 ): Promise<DownloadResult> {
   if (!isValidUrl(url)) throw new Error('Invalid URL');
 
@@ -320,15 +339,19 @@ export async function downloadWithProgress(
     const handleOutput = (data: Buffer) => {
       const lines = data.toString().split('\n');
       for (const line of lines) {
-        const pct = parseProgress(line);
-        if (pct !== null && pct > lastProgress) {
-          lastProgress = pct;
-          job.progress = Math.round(pct);
+        const info = parseProgress(line);
+        if (info !== null && info.percent > lastProgress) {
+          lastProgress = info.percent;
+          job.progress = Math.round(info.percent);
+          if (info.speed) job.speed = info.speed;
+          if (info.eta) job.eta = info.eta;
           downloadEmitter.emit('progress', jobId, { ...job });
         }
         // Detect merging/conversion phase
         if (line.includes('[Merger]') || line.includes('[ExtractAudio]') || line.includes('[VideoConvertor]')) {
           job.status = 'converting';
+          job.speed = undefined;
+          job.eta = undefined;
           downloadEmitter.emit('progress', jobId, { ...job });
         }
       }
@@ -337,19 +360,49 @@ export async function downloadWithProgress(
     proc.stdout.on('data', handleOutput);
     proc.stderr.on('data', handleOutput);
 
-    proc.on('close', (code) => {
+    proc.on('close', async (code) => {
       if (code === 0) {
+        let finalPath = outputPath;
+        let finalFilename = `${fileId}.${outputExt}`;
+
+        // Apply trim if requested
+        if (trimStart || trimEnd) {
+          try {
+            job.status = 'converting';
+            job.speed = undefined;
+            job.eta = undefined;
+            downloadEmitter.emit('progress', jobId, { ...job });
+
+            const trimmedId = `${fileId}_trimmed`;
+            const trimmedPath = path.join(DOWNLOADS_DIR, `${trimmedId}.${outputExt}`);
+            const ffmpegArgs = ['ffmpeg', '-i', outputPath];
+            if (trimStart) ffmpegArgs.push('-ss', trimStart);
+            if (trimEnd) ffmpegArgs.push('-to', trimEnd);
+            ffmpegArgs.push('-c', 'copy', trimmedPath);
+
+            await runCmd(ffmpegArgs.join(' '));
+
+            // Replace original with trimmed
+            fs.unlinkSync(outputPath);
+            finalPath = trimmedPath;
+            finalFilename = `${trimmedId}.${outputExt}`;
+          } catch (trimErr) {
+            // If trim fails, keep original
+            console.error('Trim failed:', trimErr);
+          }
+        }
+
         job.status = 'done';
         job.progress = 100;
-        job.filename = `${fileId}.${outputExt}`;
+        job.filename = finalFilename;
         downloadEmitter.emit('progress', jobId, { ...job });
 
         // Clean up job after 5 min
         setTimeout(() => activeJobs.delete(jobId), 5 * 60 * 1000);
 
         resolve({
-          filename: `${fileId}.${outputExt}`,
-          filepath: outputPath,
+          filename: finalFilename,
+          filepath: finalPath,
           title: job.title,
           thumbnail: job.thumbnail,
           platform,
@@ -541,6 +594,32 @@ export async function downloadPlaylistItems(
   }, 10 * 60 * 1000);
 
   return { zipFilename, results, failed };
+}
+
+// ==================== Thumbnail Download ====================
+export async function downloadThumbnail(url: string): Promise<{ filename: string; filepath: string }> {
+  if (!isValidUrl(url)) throw new Error('Invalid URL');
+
+  const fileId = uuidv4();
+  const outputPath = path.join(DOWNLOADS_DIR, `${fileId}.jpg`);
+
+  await runCmd(
+    `"${YTDLP_BIN}" --write-thumbnail --skip-download --convert-thumbnails jpg -o "${path.join(DOWNLOADS_DIR, fileId)}" "${url}"`,
+  );
+
+  // yt-dlp may create file with different extension patterns
+  const possibleFiles = [`${fileId}.jpg`, `${fileId}.webp`, `${fileId}.png`];
+  for (const f of possibleFiles) {
+    const fp = path.join(DOWNLOADS_DIR, f);
+    if (fs.existsSync(fp)) {
+      if (fp !== outputPath) {
+        fs.renameSync(fp, outputPath);
+      }
+      return { filename: `${fileId}.jpg`, filepath: outputPath };
+    }
+  }
+
+  throw new Error('Thumbnail download failed');
 }
 
 // ==================== Cleanup ====================

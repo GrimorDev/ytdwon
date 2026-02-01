@@ -12,15 +12,25 @@ router.get('/', authRequired, async (req: AuthRequest, res: Response, next) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     const offset = (page - 1) * limit;
+    const search = (req.query.search as string) || '';
+    const platform = (req.query.platform as string) || '';
+
+    const where: any = { userId: req.userId };
+    if (search) {
+      where.title = { contains: search, mode: 'insensitive' };
+    }
+    if (platform) {
+      where.platform = platform;
+    }
 
     const [downloads, total] = await Promise.all([
       prisma.download.findMany({
-        where: { userId: req.userId },
+        where,
         orderBy: { createdAt: 'desc' },
         skip: offset,
         take: limit,
       }),
-      prisma.download.count({ where: { userId: req.userId } }),
+      prisma.download.count({ where }),
     ]);
 
     res.json({

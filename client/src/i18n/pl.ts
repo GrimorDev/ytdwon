@@ -187,7 +187,7 @@ export const pl = {
   getPremiumBtn: 'Wykup Premium',
 
   // YouTube landing features
-  featuresTitle: 'Co potrafi YTDown?',
+  featuresTitle: 'Co potrafi Vipile?',
   featuresSubtitle: 'Wszystko czego potrzebujesz do pobierania mediow z internetu',
   featureVideoTitle: 'Wideo MP4',
   featureVideoDesc: 'Pobieraj filmy w jakosci do 1080p za darmo. Premium odblokowuje 4K i 8K.',
@@ -210,6 +210,32 @@ export const pl = {
   step2Desc: 'Wybierz jakosc wideo (do 1080p/4K) lub format audio (MP3, WAV, FLAC).',
   step3Title: 'Pobierz',
   step3Desc: 'Kliknij pobierz i gotowe! Plik zostanie pobrany na Twoje urzadzenie.',
+
+  // Batch URL
+  batchMode: 'Wiele linkow',
+  singleMode: 'Pojedynczy link',
+  batchPlaceholder: 'Wklej linki (jeden na linie)...',
+  batchLimit: 'Plan Free: max 5 linkow naraz.',
+  batchLimitPremium: 'Wklejaj bez limitu!',
+
+  // Trim
+  advancedOptions: 'Opcje zaawansowane',
+  trimStart: 'Poczatek (MM:SS)',
+  trimEnd: 'Koniec (MM:SS)',
+  trimFreeLimit: 'Free: max 5 min. Premium: bez limitu.',
+
+  // Thumbnail
+  downloadThumbnail: 'Pobierz miniaturke',
+  thumbnailDownloading: 'Pobieranie miniaturki...',
+
+  // Speed / ETA
+  speedLabel: 'Predkosc',
+  etaLabel: 'Pozostalo',
+
+  // History search
+  searchHistory: 'Szukaj w historii...',
+  allPlatforms: 'Wszystkie platformy',
+  redownload: 'Pobierz ponownie',
 
   // Footer
   footer: 'Pobierz wideo i audio z popularnych platform',

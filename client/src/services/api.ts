@@ -64,8 +64,10 @@ export const authApi = {
 // Download
 export const downloadApi = {
   getInfo: (url: string) => api.post<VideoInfo>('/download/info', { url }),
-  start: (data: { url: string; quality: string; isAudio: boolean; outputFormat?: string }) =>
+  start: (data: { url: string; quality: string; isAudio: boolean; outputFormat?: string; trimStart?: string; trimEnd?: string }) =>
     api.post<{ jobId: string }>('/download/start', data),
+  downloadThumbnail: (url: string) =>
+    api.post<{ filename: string }>('/download/thumbnail', { url }),
   getFileUrl: (filename: string) => `/api/download/file/${filename}`,
   subscribeProgress: (jobId: string, onData: (job: DownloadJob) => void, onError?: () => void) => {
     const es = new EventSource(`/api/download/progress/${jobId}`);
@@ -113,8 +115,12 @@ export const downloadApi = {
 
 // History
 export const historyApi = {
-  getAll: (page = 1, limit = 20) =>
-    api.get<PaginatedResponse<Download>>(`/history?page=${page}&limit=${limit}`),
+  getAll: (page = 1, limit = 20, search?: string, platform?: string) => {
+    let url = `/history?page=${page}&limit=${limit}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (platform) url += `&platform=${platform}`;
+    return api.get<PaginatedResponse<Download>>(url);
+  },
   delete: (id: string) => api.delete(`/history/${id}`),
 };
 

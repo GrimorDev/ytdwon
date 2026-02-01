@@ -37,6 +37,8 @@ export interface DownloadJob {
   id: string;
   status: 'queued' | 'fetching_info' | 'downloading' | 'converting' | 'done' | 'error';
   progress: number;
+  speed?: string;
+  eta?: string;
   title: string;
   thumbnail: string;
   platform: Platform;
