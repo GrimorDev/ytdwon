@@ -49,43 +49,6 @@ function findYtdlp(): string {
 
 const YTDLP_BIN = findYtdlp();
 
-// Cookies file for YouTube bot detection bypass
-const COOKIES_PATH = path.join(__dirname, '../../cookies.txt');
-
-// PO Token provider (bgutil-ytdlp-pot-provider)
-const BGUTIL_PROVIDER_URL = process.env.BGUTIL_PROVIDER_URL || '';
-
-function hasCookies(): boolean {
-  try {
-    if (!fs.existsSync(COOKIES_PATH)) return false;
-    const content = fs.readFileSync(COOKIES_PATH, 'utf-8');
-    return content.split('\n').some(line => line.trim() && !line.startsWith('#'));
-  } catch {
-    return false;
-  }
-}
-
-// Extra yt-dlp flags for Docker environment
-function getYtdlpFlags(): string[] {
-  const flags: string[] = ['--js-runtimes', 'nodejs'];
-  if (BGUTIL_PROVIDER_URL) {
-    flags.push('--extractor-args', `youtubepot-bgutilhttp:base_url=${BGUTIL_PROVIDER_URL}`);
-  }
-  if (hasCookies()) {
-    flags.push('--cookies', COOKIES_PATH);
-  }
-  return flags;
-}
-
-function getYtdlpFlagsStr(): string {
-  // For exec() shell commands — only quote args with spaces
-  return getYtdlpFlags().map(f => f.includes(' ') ? `'${f}'` : f).join(' ');
-}
-
-// Log status on startup
-console.log(`[yt-dlp] PO Token provider: ${BGUTIL_PROVIDER_URL || 'NOT CONFIGURED'}`);
-console.log(`[yt-dlp] Cookies file: ${hasCookies() ? 'FOUND' : 'not found'}`);
-console.log(`[yt-dlp] JS runtime: nodejs`);
 
 if (!fs.existsSync(DOWNLOADS_DIR)) {
   fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
@@ -204,7 +167,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
 
   if (isPlaylist) {
     const { stdout } = await runCmd(
-      `yt-dlp ${getYtdlpFlagsStr()} --flat-playlist --dump-json "${url}"`,
+      `yt-dlp --flat-playlist --dump-json "${url}"`,
       { maxBuffer: 50 * 1024 * 1024 },
     );
     const lines = stdout.toString().trim().split('\n');
@@ -227,7 +190,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
   }
 
   const { stdout } = await runCmd(
-    `yt-dlp ${getYtdlpFlagsStr()} --dump-json --no-download "${url}"`,
+    `yt-dlp --dump-json --no-download "${url}"`,
     { maxBuffer: 10 * 1024 * 1024 },
   );
 
@@ -322,7 +285,7 @@ export async function downloadWithProgress(
   // Fetch metadata first
   try {
     const { stdout } = await runCmd(
-      `yt-dlp ${getYtdlpFlagsStr()} --dump-json --no-download "${url}"`,
+      `yt-dlp --dump-json --no-download "${url}"`,
       { maxBuffer: 10 * 1024 * 1024 },
     );
     const meta = JSON.parse(stdout.toString());
@@ -332,7 +295,7 @@ export async function downloadWithProgress(
   } catch {}
 
   // Build command args
-  const args: string[] = [...getYtdlpFlags()];
+  const args: string[] = [];
   let outputExt: string;
 
   if (isAudio) {
@@ -496,7 +459,7 @@ export async function getPlaylistItems(url: string): Promise<{ title: string; it
   if (!isValidUrl(url)) throw new Error('Invalid URL');
 
   const { stdout } = await runCmd(
-    `yt-dlp ${getYtdlpFlagsStr()} --flat-playlist --dump-json "${url}"`,
+    `yt-dlp --flat-playlist --dump-json "${url}"`,
     { maxBuffer: 50 * 1024 * 1024 },
   );
   const lines = stdout.toString().trim().split('\n');

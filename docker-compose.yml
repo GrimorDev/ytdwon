@@ -16,19 +16,12 @@ services:
       timeout: 5s
       retries: 5
 
-  bgutil-provider:
-    image: brainicism/bgutil-ytdlp-pot-provider
-    restart: unless-stopped
-    init: true
-
   server:
     build: ./server
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-      bgutil-provider:
-        condition: service_started
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-ytdown}:${POSTGRES_PASSWORD:-ytdown_secret}@postgres:5432/${POSTGRES_DB:-ytdown}?schema=public
       JWT_SECRET: ${JWT_SECRET}
@@ -39,10 +32,8 @@ services:
       CLIENT_URL: ${CLIENT_URL:-http://localhost}
       PORT: 3001
       NODE_ENV: production
-      BGUTIL_PROVIDER_URL: http://bgutil-provider:4416
     volumes:
       - downloads:/app/downloads
-      - ./cookies.txt:/app/cookies.txt:ro
 
   client:
     build: ./client
