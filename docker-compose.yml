@@ -42,7 +42,6 @@ services:
       BGUTIL_PROVIDER_URL: http://bgutil-provider:4416
     volumes:
       - downloads:/app/downloads
-      - ./combined_cookies.txt:/app/cookies.txt:ro
 
   client:
     build: ./client
