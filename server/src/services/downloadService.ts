@@ -152,7 +152,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
       `yt-dlp --flat-playlist --dump-json "${url}"`,
       { maxBuffer: 50 * 1024 * 1024 },
     );
-    const lines = stdout.trim().split('\n');
+    const lines = stdout.toString().trim().split('\n');
     const firstItem = JSON.parse(lines[0]);
 
     return {
@@ -176,7 +176,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
     { maxBuffer: 10 * 1024 * 1024 },
   );
 
-  const data = JSON.parse(stdout);
+  const data = JSON.parse(stdout.toString());
   const formats: FormatInfo[] = [];
   const seenQualities = new Set<string>();
 
@@ -268,7 +268,7 @@ export async function downloadWithProgress(
       `yt-dlp --dump-json --no-download "${url}"`,
       { maxBuffer: 10 * 1024 * 1024 },
     );
-    const meta = JSON.parse(stdout);
+    const meta = JSON.parse(stdout.toString());
     job.title = meta.title || 'Unknown';
     job.thumbnail = meta.thumbnail || '';
     downloadEmitter.emit('progress', jobId, { ...job });
@@ -408,7 +408,7 @@ export async function getPlaylistItems(url: string): Promise<{ title: string; it
     `yt-dlp --flat-playlist --dump-json "${url}"`,
     { maxBuffer: 50 * 1024 * 1024 },
   );
-  const lines = stdout.trim().split('\n');
+  const lines = stdout.toString().trim().split('\n');
   const parsed = lines.map((l: string) => JSON.parse(l));
 
   const playlistTitle = parsed[0]?.playlist_title || 'Playlist';

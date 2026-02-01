@@ -40,10 +40,11 @@ router.get('/', authRequired, async (req: AuthRequest, res: Response, next) => {
 // Delete history entry
 router.delete('/:id', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
+    const userId = req.userId as string;
 
     const download = await prisma.download.findFirst({
-      where: { id, userId: req.userId },
+      where: { id, userId },
     });
 
     if (!download) {
