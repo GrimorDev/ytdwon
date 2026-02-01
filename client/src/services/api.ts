@@ -66,8 +66,6 @@ export const downloadApi = {
   getInfo: (url: string) => api.post<VideoInfo>('/download/info', { url }),
   start: (data: { url: string; quality: string; isAudio: boolean; outputFormat?: string; trimStart?: string; trimEnd?: string }) =>
     api.post<{ jobId: string }>('/download/start', data),
-  downloadThumbnail: (url: string) =>
-    api.post<{ filename: string }>('/download/thumbnail', { url }),
   getFileUrl: (filename: string) => `/api/download/file/${filename}`,
   subscribeProgress: (jobId: string, onData: (job: DownloadJob) => void, onError?: () => void) => {
     const es = new EventSource(`/api/download/progress/${jobId}`);

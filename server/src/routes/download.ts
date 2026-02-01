@@ -11,7 +11,6 @@ import {
   getPlaylistItems,
   downloadPlaylistItems,
   getPlaylistJob,
-  downloadThumbnail,
 } from '../services/downloadService';
 import { AppError } from '../middleware/errorHandler';
 
@@ -238,19 +237,6 @@ router.get('/playlist/progress/:jobId', (req, res) => {
   req.on('close', () => {
     downloadEmitter.off('playlist-progress', onProgress);
   });
-});
-
-// Download thumbnail
-router.post('/thumbnail', async (req: AuthRequest, res: Response, next) => {
-  try {
-    const { url } = req.body;
-    if (!url) throw new AppError(400, 'URL is required');
-
-    const result = await downloadThumbnail(url);
-    res.json({ filename: result.filename });
-  } catch (err: any) {
-    next(err);
-  }
 });
 
 export { router as downloadRouter };

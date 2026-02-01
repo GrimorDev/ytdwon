@@ -78,10 +78,8 @@ function getYtdlpFlags(): string[] {
 }
 
 function getYtdlpFlagsStr(): string {
-  return getYtdlpFlags().map(f => {
-    if (f.includes(' ') || f.includes('=') || f.includes(':')) return `"${f}"`;
-    return f;
-  }).join(' ');
+  // For exec() shell commands — only quote args with spaces
+  return getYtdlpFlags().map(f => f.includes(' ') ? `'${f}'` : f).join(' ');
 }
 
 // Log status on startup
@@ -634,32 +632,6 @@ export async function downloadPlaylistItems(
   }, 10 * 60 * 1000);
 
   return { zipFilename, results, failed };
-}
-
-// ==================== Thumbnail Download ====================
-export async function downloadThumbnail(url: string): Promise<{ filename: string; filepath: string }> {
-  if (!isValidUrl(url)) throw new Error('Invalid URL');
-
-  const fileId = uuidv4();
-  const outputPath = path.join(DOWNLOADS_DIR, `${fileId}.jpg`);
-
-  await runCmd(
-    `"${YTDLP_BIN}" ${getYtdlpFlagsStr()} --write-thumbnail --skip-download --convert-thumbnails jpg -o "${path.join(DOWNLOADS_DIR, fileId)}" "${url}"`,
-  );
-
-  // yt-dlp may create file with different extension patterns
-  const possibleFiles = [`${fileId}.jpg`, `${fileId}.webp`, `${fileId}.png`];
-  for (const f of possibleFiles) {
-    const fp = path.join(DOWNLOADS_DIR, f);
-    if (fs.existsSync(fp)) {
-      if (fp !== outputPath) {
-        fs.renameSync(fp, outputPath);
-      }
-      return { filename: `${fileId}.jpg`, filepath: outputPath };
-    }
-  }
-
-  throw new Error('Thumbnail download failed');
 }
 
 // ==================== Cleanup ====================

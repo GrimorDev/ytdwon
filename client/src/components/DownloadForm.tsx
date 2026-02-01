@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Search, Download, Music, Film, Loader2, AlertCircle, Crown,
   Play, Plus, ListOrdered, CheckCircle2, XCircle, Headphones,
-  Image, Scissors, List, ChevronDown, ChevronUp,
+  Scissors, List, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { downloadApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -69,9 +69,6 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [trimStart, setTrimStart] = useState('');
   const [trimEnd, setTrimEnd] = useState('');
-
-  // Thumbnail
-  const [thumbLoading, setThumbLoading] = useState(false);
 
   const isPremium = user?.plan === 'PREMIUM';
 
@@ -234,25 +231,6 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
     }
 
     setBatchUrls('');
-  };
-
-  // Thumbnail download
-  const handleThumbnail = async () => {
-    if (!url) return;
-    setThumbLoading(true);
-    try {
-      const { data } = await downloadApi.downloadThumbnail(url);
-      const a = document.createElement('a');
-      a.href = downloadApi.getFileUrl(data.filename);
-      a.download = `${info?.title || 'thumbnail'}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch {
-      setError('Thumbnail download failed');
-    } finally {
-      setThumbLoading(false);
-    }
   };
 
   const formatFileSize = (bytes?: number) => {
@@ -418,15 +396,6 @@ export default function DownloadForm({ platform, placeholder, accentColor }: Pro
                     {t.playlist}: {info.playlistCount} {t.playlistClickToSelect}
                   </button>
                 )}
-                {/* Thumbnail download */}
-                <button
-                  onClick={handleThumbnail}
-                  disabled={thumbLoading}
-                  className="flex items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-lg text-xs transition-colors"
-                >
-                  {thumbLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Image className="w-3.5 h-3.5" />}
-                  {t.downloadThumbnail}
-                </button>
               </div>
             </div>
           </div>
