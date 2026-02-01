@@ -49,6 +49,37 @@ function findYtdlp(): string {
 
 const YTDLP_BIN = findYtdlp();
 
+// Cookies file for YouTube bot detection bypass
+const COOKIES_PATH = path.join(__dirname, '../../cookies.txt');
+
+function hasCookies(): boolean {
+  try {
+    if (!fs.existsSync(COOKIES_PATH)) return false;
+    const content = fs.readFileSync(COOKIES_PATH, 'utf-8');
+    // Check if file has actual cookie lines (not just comments/empty)
+    return content.split('\n').some(line => line.trim() && !line.startsWith('#'));
+  } catch {
+    return false;
+  }
+}
+
+// Extra yt-dlp flags for Docker environment
+function getYtdlpFlags(): string[] {
+  const flags: string[] = ['--js-runtimes', 'nodejs'];
+  if (hasCookies()) {
+    flags.push('--cookies', COOKIES_PATH);
+  }
+  return flags;
+}
+
+function getYtdlpFlagsStr(): string {
+  return getYtdlpFlags().map(f => f.includes(' ') ? `"${f}"` : f).join(' ');
+}
+
+// Log cookies status on startup
+console.log(`[yt-dlp] Cookies file: ${hasCookies() ? 'FOUND with cookies' : 'NOT FOUND or empty (YouTube may block requests)'}`);
+console.log(`[yt-dlp] JS runtime: nodejs`);
+
 if (!fs.existsSync(DOWNLOADS_DIR)) {
   fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
 }
@@ -166,7 +197,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
 
   if (isPlaylist) {
     const { stdout } = await runCmd(
-      `yt-dlp --flat-playlist --dump-json "${url}"`,
+      `yt-dlp ${getYtdlpFlagsStr()} --flat-playlist --dump-json "${url}"`,
       { maxBuffer: 50 * 1024 * 1024 },
     );
     const lines = stdout.toString().trim().split('\n');
@@ -189,7 +220,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
   }
 
   const { stdout } = await runCmd(
-    `yt-dlp --dump-json --no-download "${url}"`,
+    `yt-dlp ${getYtdlpFlagsStr()} --dump-json --no-download "${url}"`,
     { maxBuffer: 10 * 1024 * 1024 },
   );
 
@@ -284,7 +315,7 @@ export async function downloadWithProgress(
   // Fetch metadata first
   try {
     const { stdout } = await runCmd(
-      `yt-dlp --dump-json --no-download "${url}"`,
+      `yt-dlp ${getYtdlpFlagsStr()} --dump-json --no-download "${url}"`,
       { maxBuffer: 10 * 1024 * 1024 },
     );
     const meta = JSON.parse(stdout.toString());
@@ -294,7 +325,7 @@ export async function downloadWithProgress(
   } catch {}
 
   // Build command args
-  const args: string[] = [];
+  const args: string[] = [...getYtdlpFlags()];
   let outputExt: string;
 
   if (isAudio) {
@@ -458,7 +489,7 @@ export async function getPlaylistItems(url: string): Promise<{ title: string; it
   if (!isValidUrl(url)) throw new Error('Invalid URL');
 
   const { stdout } = await runCmd(
-    `yt-dlp --flat-playlist --dump-json "${url}"`,
+    `yt-dlp ${getYtdlpFlagsStr()} --flat-playlist --dump-json "${url}"`,
     { maxBuffer: 50 * 1024 * 1024 },
   );
   const lines = stdout.toString().trim().split('\n');
@@ -604,7 +635,7 @@ export async function downloadThumbnail(url: string): Promise<{ filename: string
   const outputPath = path.join(DOWNLOADS_DIR, `${fileId}.jpg`);
 
   await runCmd(
-    `"${YTDLP_BIN}" --write-thumbnail --skip-download --convert-thumbnails jpg -o "${path.join(DOWNLOADS_DIR, fileId)}" "${url}"`,
+    `"${YTDLP_BIN}" ${getYtdlpFlagsStr()} --write-thumbnail --skip-download --convert-thumbnails jpg -o "${path.join(DOWNLOADS_DIR, fileId)}" "${url}"`,
   );
 
   // yt-dlp may create file with different extension patterns
