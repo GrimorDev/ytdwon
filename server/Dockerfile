@@ -28,10 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     netcat-openbsd \
     ca-certificates \
     unzip \
-  && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-  && chmod a+rx /usr/local/bin/yt-dlp \
   && curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh \
-  && python3 -m pip install --break-system-packages -U bgutil-ytdlp-pot-provider \
+  && python3 -m pip install --break-system-packages -U "yt-dlp[default]" bgutil-ytdlp-pot-provider \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
