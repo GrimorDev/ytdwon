@@ -52,11 +52,13 @@ const YTDLP_BIN = findYtdlp();
 // Cookies file for YouTube bot detection bypass
 const COOKIES_PATH = path.join(__dirname, '../../cookies.txt');
 
+// PO Token provider (bgutil-ytdlp-pot-provider)
+const BGUTIL_PROVIDER_URL = process.env.BGUTIL_PROVIDER_URL || '';
+
 function hasCookies(): boolean {
   try {
     if (!fs.existsSync(COOKIES_PATH)) return false;
     const content = fs.readFileSync(COOKIES_PATH, 'utf-8');
-    // Check if file has actual cookie lines (not just comments/empty)
     return content.split('\n').some(line => line.trim() && !line.startsWith('#'));
   } catch {
     return false;
@@ -66,6 +68,9 @@ function hasCookies(): boolean {
 // Extra yt-dlp flags for Docker environment
 function getYtdlpFlags(): string[] {
   const flags: string[] = ['--js-runtimes', 'nodejs'];
+  if (BGUTIL_PROVIDER_URL) {
+    flags.push('--extractor-args', `youtubepot-bgutilhttp:base_url=${BGUTIL_PROVIDER_URL}`);
+  }
   if (hasCookies()) {
     flags.push('--cookies', COOKIES_PATH);
   }
@@ -73,11 +78,15 @@ function getYtdlpFlags(): string[] {
 }
 
 function getYtdlpFlagsStr(): string {
-  return getYtdlpFlags().map(f => f.includes(' ') ? `"${f}"` : f).join(' ');
+  return getYtdlpFlags().map(f => {
+    if (f.includes(' ') || f.includes('=') || f.includes(':')) return `"${f}"`;
+    return f;
+  }).join(' ');
 }
 
-// Log cookies status on startup
-console.log(`[yt-dlp] Cookies file: ${hasCookies() ? 'FOUND with cookies' : 'NOT FOUND or empty (YouTube may block requests)'}`);
+// Log status on startup
+console.log(`[yt-dlp] PO Token provider: ${BGUTIL_PROVIDER_URL || 'NOT CONFIGURED'}`);
+console.log(`[yt-dlp] Cookies file: ${hasCookies() ? 'FOUND' : 'not found'}`);
 console.log(`[yt-dlp] JS runtime: nodejs`);
 
 if (!fs.existsSync(DOWNLOADS_DIR)) {
