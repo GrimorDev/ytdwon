@@ -20,6 +20,12 @@ services:
     image: brainicism/bgutil-ytdlp-pot-provider
     restart: unless-stopped
     init: true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4416 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
 
   server:
     build: ./server
@@ -28,7 +34,7 @@ services:
       postgres:
         condition: service_healthy
       bgutil-provider:
-        condition: service_started
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-ytdown}:${POSTGRES_PASSWORD:-ytdown_secret}@postgres:5432/${POSTGRES_DB:-ytdown}?schema=public
       JWT_SECRET: ${JWT_SECRET}
