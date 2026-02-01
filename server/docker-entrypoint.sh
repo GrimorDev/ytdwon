@@ -37,12 +37,21 @@ echo "[yt-dlp] Config:"
 cat /etc/yt-dlp.conf
 echo ""
 
+# Diagnostic info
+echo "[yt-dlp] which yt-dlp: $(which yt-dlp)"
 echo "[yt-dlp] Version: $(yt-dlp --version 2>/dev/null || echo 'unknown')"
-
-# Diagnostic: check if bgutil plugin is loaded by yt-dlp
 echo "[yt-dlp] Checking plugins..."
-python3 -c "import bgutil_ytdlp_pot_provider; print('[yt-dlp] bgutil plugin: INSTALLED')" 2>/dev/null || echo "[yt-dlp] bgutil plugin: NOT FOUND"
-yt-dlp --list-pot-providers 2>&1 | head -20 || echo "[yt-dlp] --list-pot-providers not supported"
+python3 -m pip list 2>/dev/null | grep -iE "yt.dlp|bgutil" || echo "  (no matching pip packages)"
+python3 -c "import bgutil_ytdlp_pot_provider; print('[yt-dlp] bgutil plugin: INSTALLED')" 2>&1 || echo "[yt-dlp] bgutil plugin: NOT FOUND"
+python3 -c "
+import sys
+print('[yt-dlp] Python path:', sys.executable)
+try:
+    import yt_dlp_plugins
+    print('[yt-dlp] yt_dlp_plugins path:', yt_dlp_plugins.__path__)
+except Exception as e:
+    print('[yt-dlp] yt_dlp_plugins error:', e)
+" 2>&1 || true
 
 echo "Running Prisma migrations..."
 npx prisma migrate deploy
