@@ -2,6 +2,8 @@ import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
+import http from 'http';
+import https from 'https';
 import { v4 as uuidv4 } from 'uuid';
 import { EventEmitter } from 'events';
 import { Platform } from '@prisma/client';
@@ -49,6 +51,8 @@ function findYtdlp(): string {
 
 const YTDLP_BIN = findYtdlp();
 
+// Cobalt API URL (self-hosted instance)
+const COBALT_API_URL = process.env.COBALT_API_URL || '';
 
 if (!fs.existsSync(DOWNLOADS_DIR)) {
   fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
@@ -112,6 +116,10 @@ function detectPlatform(url: string): Platform {
   throw new Error('Unsupported platform');
 }
 
+function shouldUseCobalt(platform: Platform): boolean {
+  return COBALT_API_URL !== '' && (platform === 'YOUTUBE' || platform === 'INSTAGRAM');
+}
+
 function isValidUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -156,6 +164,236 @@ const VIDEO_FORMATS: Record<string, string> = {
   avi: 'avi',
 };
 
+// ==================== Cobalt API ====================
+interface CobaltResponse {
+  status: 'tunnel' | 'redirect' | 'picker' | 'error';
+  url?: string;
+  filename?: string;
+  picker?: { url: string; type: string }[];
+  error?: { code: string };
+}
+
+async function cobaltRequest(url: string, isAudio: boolean, quality?: string): Promise<CobaltResponse> {
+  const body = JSON.stringify({
+    url,
+    downloadMode: isAudio ? 'audio' : 'auto',
+    videoQuality: quality || '1080',
+    audioFormat: 'mp3',
+    audioBitrate: '128',
+    filenameStyle: 'basic',
+  });
+
+  return new Promise((resolve, reject) => {
+    const apiUrl = new URL(COBALT_API_URL);
+    const options = {
+      hostname: apiUrl.hostname,
+      port: apiUrl.port || (apiUrl.protocol === 'https:' ? 443 : 80),
+      path: '/',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    };
+
+    const client = apiUrl.protocol === 'https:' ? https : http;
+    const req = client.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch {
+          reject(new Error(`Cobalt returned invalid JSON: ${data.substring(0, 200)}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error('Cobalt request timeout')); });
+    req.write(body);
+    req.end();
+  });
+}
+
+function downloadFileFromUrl(
+  fileUrl: string,
+  outputPath: string,
+  onProgress?: (percent: number, speed?: string) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const makeRequest = (url: string, redirectCount = 0) => {
+      if (redirectCount > 5) {
+        reject(new Error('Too many redirects'));
+        return;
+      }
+
+      const parsedUrl = new URL(url);
+      const client = parsedUrl.protocol === 'https:' ? https : http;
+
+      client.get(url, (res) => {
+        // Handle redirects
+        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          makeRequest(res.headers.location, redirectCount + 1);
+          return;
+        }
+
+        if (res.statusCode !== 200) {
+          reject(new Error(`Download failed with status ${res.statusCode}`));
+          return;
+        }
+
+        const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+        let receivedBytes = 0;
+        let lastReportTime = 0;
+        let lastReportBytes = 0;
+
+        const file = fs.createWriteStream(outputPath);
+
+        res.on('data', (chunk: Buffer) => {
+          receivedBytes += chunk.length;
+          const now = Date.now();
+
+          // Report progress every 500ms
+          if (totalBytes > 0 && now - lastReportTime > 500) {
+            const percent = Math.round((receivedBytes / totalBytes) * 100);
+            const elapsed = (now - lastReportTime) / 1000;
+            const bytesPerSec = elapsed > 0 ? (receivedBytes - lastReportBytes) / elapsed : 0;
+            const speedStr = bytesPerSec > 1048576
+              ? `${(bytesPerSec / 1048576).toFixed(1)}MiB/s`
+              : `${(bytesPerSec / 1024).toFixed(0)}KiB/s`;
+
+            onProgress?.(percent, speedStr);
+            lastReportTime = now;
+            lastReportBytes = receivedBytes;
+          }
+        });
+
+        res.pipe(file);
+
+        file.on('finish', () => {
+          file.close();
+          onProgress?.(100);
+          resolve();
+        });
+
+        file.on('error', (err) => {
+          fs.unlink(outputPath, () => {});
+          reject(err);
+        });
+      }).on('error', reject);
+    };
+
+    makeRequest(fileUrl);
+  });
+}
+
+async function cobaltGetInfo(url: string, platform: Platform): Promise<VideoInfo> {
+  // Cobalt doesn't have a separate "info" endpoint — we return preset formats
+  // and use the URL itself to determine basic info
+  return {
+    title: 'Loading...',
+    thumbnail: '',
+    duration: 0,
+    formats: [
+      { formatId: 'bestaudio', ext: 'mp3', quality: 'MP3 Audio', isAudioOnly: true },
+      { formatId: 'bestaudio', ext: 'wav', quality: 'WAV Audio', isAudioOnly: true },
+      { formatId: 'bestaudio', ext: 'flac', quality: 'FLAC Audio', isAudioOnly: true },
+      { formatId: 'best[height<=480]', ext: 'mp4', quality: '480p', isAudioOnly: false },
+      { formatId: 'best[height<=720]', ext: 'mp4', quality: '720p', isAudioOnly: false },
+      { formatId: 'best[height<=1080]', ext: 'mp4', quality: '1080p', isAudioOnly: false },
+    ],
+    platform,
+    isPlaylist: false,
+  };
+}
+
+async function cobaltDownload(
+  jobId: string,
+  url: string,
+  quality: string,
+  isAudio: boolean,
+  outputFormat: string,
+  maxQuality: number,
+  job: DownloadJob,
+): Promise<{ outputPath: string; outputExt: string }> {
+  const fileId = uuidv4();
+  const outputExt = isAudio ? (AUDIO_FORMATS[outputFormat] || 'mp3') : (VIDEO_FORMATS[outputFormat] || 'mp4');
+  const outputPath = path.join(DOWNLOADS_DIR, `${fileId}.${outputExt}`);
+
+  // Determine quality for Cobalt
+  const requestedHeight = parseInt(quality) || 1080;
+  const effectiveHeight = Math.min(requestedHeight, maxQuality);
+  const cobaltQuality = String(effectiveHeight);
+
+  // Request download URL from Cobalt
+  job.status = 'downloading';
+  job.progress = 0;
+  downloadEmitter.emit('progress', jobId, { ...job });
+
+  const cobaltRes = await cobaltRequest(url, isAudio, cobaltQuality);
+
+  if (cobaltRes.status === 'error') {
+    throw new Error(`Cobalt error: ${cobaltRes.error?.code || 'unknown'}`);
+  }
+
+  let downloadUrl: string | undefined;
+
+  if (cobaltRes.status === 'tunnel' || cobaltRes.status === 'redirect') {
+    downloadUrl = cobaltRes.url;
+  } else if (cobaltRes.status === 'picker' && cobaltRes.picker && cobaltRes.picker.length > 0) {
+    // Pick first video/audio item
+    downloadUrl = cobaltRes.picker[0].url;
+  }
+
+  if (!downloadUrl) {
+    throw new Error('Cobalt did not return a download URL');
+  }
+
+  // Update title from Cobalt filename if available
+  if (cobaltRes.filename) {
+    const nameWithoutExt = cobaltRes.filename.replace(/\.[^.]+$/, '');
+    if (nameWithoutExt) job.title = nameWithoutExt;
+    downloadEmitter.emit('progress', jobId, { ...job });
+  }
+
+  // Download file with progress
+  await downloadFileFromUrl(downloadUrl, outputPath, (percent, speed) => {
+    job.progress = percent;
+    if (speed) job.speed = speed;
+    downloadEmitter.emit('progress', jobId, { ...job });
+  });
+
+  // If audio format conversion needed (Cobalt returns mp3 by default)
+  if (isAudio && outputExt !== 'mp3') {
+    job.status = 'converting';
+    job.speed = undefined;
+    job.eta = undefined;
+    downloadEmitter.emit('progress', jobId, { ...job });
+
+    const convertedPath = path.join(DOWNLOADS_DIR, `${fileId}_conv.${outputExt}`);
+    await runCmd(`ffmpeg -i "${outputPath}" "${convertedPath}"`);
+    fs.unlinkSync(outputPath);
+    fs.renameSync(convertedPath, outputPath);
+  }
+
+  // If video format conversion needed (Cobalt returns mp4 by default)
+  if (!isAudio && outputExt !== 'mp4') {
+    job.status = 'converting';
+    job.speed = undefined;
+    job.eta = undefined;
+    downloadEmitter.emit('progress', jobId, { ...job });
+
+    const convertedPath = path.join(DOWNLOADS_DIR, `${fileId}_conv.${outputExt}`);
+    await runCmd(`ffmpeg -i "${outputPath}" "${convertedPath}"`);
+    fs.unlinkSync(outputPath);
+    fs.renameSync(convertedPath, outputPath);
+  }
+
+  return { outputPath, outputExt };
+}
+
 // ==================== Get video info ====================
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
   if (!isValidUrl(url)) throw new Error('Invalid URL');
@@ -187,6 +425,15 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
       isPlaylist: true,
       playlistCount: lines.length,
     };
+  }
+
+  // Use Cobalt for YouTube/Instagram
+  if (shouldUseCobalt(platform)) {
+    try {
+      return await cobaltGetInfo(url, platform);
+    } catch (err) {
+      console.error('[Cobalt] getInfo failed, falling back to yt-dlp:', err);
+    }
   }
 
   const { stdout } = await runCmd(
@@ -281,6 +528,64 @@ export async function downloadWithProgress(
   };
   activeJobs.set(jobId, job);
   downloadEmitter.emit('progress', jobId, { ...job });
+
+  // ---- Cobalt path for YouTube/Instagram ----
+  if (shouldUseCobalt(platform)) {
+    try {
+      const { outputPath, outputExt } = await cobaltDownload(
+        jobId, url, quality, isAudio, outputFormat, maxQuality, job,
+      );
+
+      let finalPath = outputPath;
+      let finalFilename = path.basename(outputPath);
+
+      // Apply trim if requested
+      if (trimStart || trimEnd) {
+        try {
+          job.status = 'converting';
+          job.speed = undefined;
+          job.eta = undefined;
+          downloadEmitter.emit('progress', jobId, { ...job });
+
+          const trimmedPath = path.join(DOWNLOADS_DIR, `${fileId}_trimmed.${outputExt}`);
+          const ffmpegArgs = ['ffmpeg', '-i', outputPath];
+          if (trimStart) ffmpegArgs.push('-ss', trimStart);
+          if (trimEnd) ffmpegArgs.push('-to', trimEnd);
+          ffmpegArgs.push('-c', 'copy', trimmedPath);
+
+          await runCmd(ffmpegArgs.join(' '));
+          fs.unlinkSync(outputPath);
+          finalPath = trimmedPath;
+          finalFilename = path.basename(trimmedPath);
+        } catch (trimErr) {
+          console.error('Trim failed:', trimErr);
+        }
+      }
+
+      job.status = 'done';
+      job.progress = 100;
+      job.filename = finalFilename;
+      downloadEmitter.emit('progress', jobId, { ...job });
+
+      setTimeout(() => activeJobs.delete(jobId), 5 * 60 * 1000);
+
+      return {
+        filename: finalFilename,
+        filepath: finalPath,
+        title: job.title,
+        thumbnail: job.thumbnail,
+        platform,
+      };
+    } catch (cobaltErr) {
+      console.error('[Cobalt] Download failed, falling back to yt-dlp:', cobaltErr);
+      // Reset job for yt-dlp fallback
+      job.status = 'fetching_info';
+      job.progress = 0;
+      downloadEmitter.emit('progress', jobId, { ...job });
+    }
+  }
+
+  // ---- yt-dlp path (default for FB/Twitter/TikTok, fallback for YT/IG) ----
 
   // Fetch metadata first
   try {
