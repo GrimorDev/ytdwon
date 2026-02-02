@@ -19,10 +19,19 @@ services:
   cobalt:
     image: ghcr.io/imputnet/cobalt:11
     init: true
-    read_only: true
     restart: unless-stopped
+    depends_on:
+      - yt-session
     environment:
       API_URL: "http://cobalt:9000/"
+      YOUTUBE_SESSION_SERVER: "http://yt-session:8080"
+    tmpfs:
+      - /tmp
+
+  yt-session:
+    image: ghcr.io/imputnet/yt-session-generator:webserver
+    restart: unless-stopped
+    init: true
 
   bgutil-provider:
     image: brainicism/bgutil-ytdlp-pot-provider
