@@ -194,6 +194,7 @@ async function cobaltRequest(url: string, isAudio: boolean, quality?: string): P
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Content-Length': Buffer.byteLength(body),
+        'User-Agent': 'Vipile/1.0',
       },
     };
 

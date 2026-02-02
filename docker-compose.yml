@@ -16,23 +16,6 @@ services:
       timeout: 5s
       retries: 5
 
-  cobalt:
-    image: ghcr.io/imputnet/cobalt:11
-    init: true
-    restart: unless-stopped
-    depends_on:
-      - yt-session
-    environment:
-      API_URL: "http://cobalt:9000/"
-      YOUTUBE_SESSION_SERVER: "http://yt-session:8080"
-    tmpfs:
-      - /tmp
-
-  yt-session:
-    image: ghcr.io/imputnet/yt-session-generator:webserver
-    restart: unless-stopped
-    init: true
-
   bgutil-provider:
     image: brainicism/bgutil-ytdlp-pot-provider
     restart: unless-stopped
@@ -44,8 +27,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      cobalt:
-        condition: service_started
       bgutil-provider:
         condition: service_started
     environment:
@@ -58,7 +39,7 @@ services:
       CLIENT_URL: ${CLIENT_URL:-http://localhost}
       PORT: 3001
       NODE_ENV: production
-      COBALT_API_URL: http://cobalt:9000/
+      COBALT_API_URL: https://cobalt-backend.canine.tools/
       BGUTIL_PROVIDER_URL: http://bgutil-provider:4416
     volumes:
       - downloads:/app/downloads
