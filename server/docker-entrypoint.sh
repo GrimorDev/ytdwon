@@ -3,6 +3,7 @@ set -e
 
 # Configure yt-dlp with JS runtime
 echo "--js-runtimes deno" > /etc/yt-dlp.conf
+echo "--verbose" >> /etc/yt-dlp.conf
 
 if [ -n "$BGUTIL_PROVIDER_URL" ]; then
   # Extract host and port from URL
@@ -13,7 +14,7 @@ if [ -n "$BGUTIL_PROVIDER_URL" ]; then
   echo "[yt-dlp] Waiting for PO Token provider at $BGUTIL_HOST:$BGUTIL_PORT ..."
   READY=0
   for i in $(seq 1 40); do
-    if nc -z "$BGUTIL_HOST" "$BGUTIL_PORT" 2>/dev/null || curl -sf -o /dev/null -w '' "$BGUTIL_PROVIDER_URL" 2>/dev/null; then
+    if nc -z "$BGUTIL_HOST" "$BGUTIL_PORT" 2>/dev/null; then
       echo "[yt-dlp] PO Token provider: READY (after ~$((i*3))s)"
       READY=1
       break
@@ -26,7 +27,7 @@ if [ -n "$BGUTIL_PROVIDER_URL" ]; then
     echo "--extractor-args youtube:player-client=web,mweb" >> /etc/yt-dlp.conf
     echo "--extractor-args youtubepot-bgutilhttp:base_url=$BGUTIL_PROVIDER_URL" >> /etc/yt-dlp.conf
   else
-    echo "[yt-dlp] WARNING: PO Token provider NOT available! YouTube may not work."
+    echo "[yt-dlp] WARNING: PO Token provider NOT available!"
     echo "--extractor-args youtube:player-client=web,mweb" >> /etc/yt-dlp.conf
   fi
 else
@@ -37,21 +38,24 @@ echo "[yt-dlp] Config:"
 cat /etc/yt-dlp.conf
 echo ""
 
-# Diagnostic info
-echo "[yt-dlp] which yt-dlp: $(which yt-dlp)"
-echo "[yt-dlp] Version: $(yt-dlp --version 2>/dev/null || echo 'unknown')"
-echo "[yt-dlp] Checking plugins..."
-python3 -m pip list 2>/dev/null | grep -iE "yt.dlp|bgutil" || echo "  (no matching pip packages)"
-python3 -c "import bgutil_ytdlp_pot_provider; print('[yt-dlp] bgutil plugin: INSTALLED')" 2>&1 || echo "[yt-dlp] bgutil plugin: NOT FOUND"
+# Diagnostic: list what's in yt_dlp_plugins directory
+echo "[yt-dlp] Plugin files:"
 python3 -c "
-import sys
-print('[yt-dlp] Python path:', sys.executable)
-try:
-    import yt_dlp_plugins
-    print('[yt-dlp] yt_dlp_plugins path:', yt_dlp_plugins.__path__)
-except Exception as e:
-    print('[yt-dlp] yt_dlp_plugins error:', e)
+import os, glob
+plugin_dir = '/usr/local/lib/python3.11/dist-packages/yt_dlp_plugins'
+if os.path.exists(plugin_dir):
+    for root, dirs, files in os.walk(plugin_dir):
+        for f in files:
+            if not f.startswith('__'):
+                print('  ', os.path.join(root, f))
+else:
+    print('  plugin dir not found')
 " 2>&1 || true
+
+# Quick test: try to fetch a short YT video with verbose to see plugin loading
+echo "[yt-dlp] Test run (verbose)..."
+yt-dlp --dump-json --no-download "https://www.youtube.com/watch?v=jNQXAC9IVRw" 2>&1 | head -50 || true
+echo "[yt-dlp] Test run done."
 
 echo "Running Prisma migrations..."
 npx prisma migrate deploy
