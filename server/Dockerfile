@@ -33,14 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-# Verify plugin installation (build-time check)
-RUN echo "=== Build: yt-dlp path ===" && which yt-dlp \
-  && echo "=== Build: yt-dlp version ===" && yt-dlp --version \
-  && echo "=== Build: pip packages ===" && python3 -m pip list 2>/dev/null | grep -iE "yt.dlp|bgutil" \
-  && echo "=== Build: plugin import test ===" && python3 -c "import bgutil_ytdlp_pot_provider; print('OK')" \
-  && echo "=== Build: yt_dlp_plugins ===" && python3 -c "import yt_dlp_plugins; print(yt_dlp_plugins.__path__)" 2>/dev/null || true
-
-# yt-dlp config — auto-read by yt-dlp, no code changes needed
+# yt-dlp config — overwritten by entrypoint at runtime
 RUN echo '--js-runtimes deno' > /etc/yt-dlp.conf
 
 WORKDIR /app
