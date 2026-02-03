@@ -5,21 +5,16 @@ services:
     image: postgres:15-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-ytdown}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ytdown_secret}
-      POSTGRES_DB: ${POSTGRES_DB:-ytdown}
+      POSTGRES_USER: ${POSTGRES_USER:-vipile}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vipile_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-vipile}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ytdown}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vipile}"]
       interval: 5s
       timeout: 5s
       retries: 5
-
-  bgutil-provider:
-    image: brainicism/bgutil-ytdlp-pot-provider
-    restart: unless-stopped
-    init: true
 
   server:
     build: ./server
@@ -27,22 +22,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      bgutil-provider:
-        condition: service_started
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-ytdown}:${POSTGRES_PASSWORD:-ytdown_secret}@postgres:5432/${POSTGRES_DB:-ytdown}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vipile}:${POSTGRES_PASSWORD:-vipile_secret}@postgres:5432/${POSTGRES_DB:-vipile}?schema=public
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID}
       CLIENT_URL: ${CLIENT_URL:-http://localhost}
       PORT: 3001
       NODE_ENV: production
-      COBALT_API_URL: https://cobalt-backend.canine.tools/
-      BGUTIL_PROVIDER_URL: http://bgutil-provider:4416
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@vipile.com}
     volumes:
-      - downloads:/app/downloads
+      - uploads:/app/uploads
 
   client:
     build: ./client
@@ -54,4 +49,4 @@ services:
 
 volumes:
   pgdata:
-  downloads:
+  uploads:

@@ -1,40 +1,53 @@
-import { Routes, Route } from 'react-router-dom';
-import { useTranslation } from './i18n';
-import Navbar from './components/Navbar';
-import YouTubePage from './pages/YouTubePage';
-import FacebookPage from './pages/FacebookPage';
-import TwitterPage from './pages/TwitterPage';
-import TikTokPage from './pages/TikTokPage';
-import InstagramPage from './pages/InstagramPage';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import Navbar from './components/Layout/Navbar';
+import Footer from './components/Layout/Footer';
+import HomePage from './pages/HomePage';
+import ListingsPage from './pages/ListingsPage';
+import ListingDetailPage from './pages/ListingDetailPage';
+import CreateListingPage from './pages/CreateListingPage';
+import EditListingPage from './pages/EditListingPage';
+import MyListingsPage from './pages/MyListingsPage';
+import FavoritesPage from './pages/FavoritesPage';
+import ChatPage from './pages/ChatPage';
+import UserProfilePage from './pages/UserProfilePage';
+import AccountPage from './pages/AccountPage';
+import PromotePage from './pages/PromotePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import HistoryPage from './pages/HistoryPage';
-import PricingPage from './pages/PricingPage';
-import AccountPage from './pages/AccountPage';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" /></div>;
+  if (!user) return <Navigate to="/logowanie" />;
+  return <>{children}</>;
+}
 
 export default function App() {
-  const { t } = useTranslation();
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+      <main className="flex-1">
         <Routes>
-          <Route path="/" element={<YouTubePage />} />
-          <Route path="/facebook" element={<FacebookPage />} />
-          <Route path="/twitter" element={<TwitterPage />} />
-          <Route path="/tiktok" element={<TikTokPage />} />
-          <Route path="/instagram" element={<InstagramPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/account" element={<AccountPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/ogloszenia" element={<ListingsPage />} />
+          <Route path="/ogloszenia/:id" element={<ListingDetailPage />} />
+          <Route path="/kategoria/:slug" element={<ListingsPage />} />
+          <Route path="/dodaj" element={<ProtectedRoute><CreateListingPage /></ProtectedRoute>} />
+          <Route path="/edytuj/:id" element={<ProtectedRoute><EditListingPage /></ProtectedRoute>} />
+          <Route path="/moje-ogloszenia" element={<ProtectedRoute><MyListingsPage /></ProtectedRoute>} />
+          <Route path="/ulubione" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+          <Route path="/wiadomosci" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="/wiadomosci/:conversationId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="/uzytkownik/:id" element={<UserProfilePage />} />
+          <Route path="/konto" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+          <Route path="/promuj/:id" element={<ProtectedRoute><PromotePage /></ProtectedRoute>} />
+          <Route path="/logowanie" element={<LoginPage />} />
+          <Route path="/rejestracja" element={<RegisterPage />} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
-
-      <footer className="footer-bar py-6 text-center text-sm">
-        <p>Vipile &copy; {new Date().getFullYear()} - {t.footer}</p>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -83,7 +83,11 @@ router.get('/me', authRequired, async (req: AuthRequest, res: Response, next) =>
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: { id: true, email: true, name: true, plan: true, createdAt: true },
+      select: {
+        id: true, email: true, name: true, phone: true,
+        avatarUrl: true, bio: true, city: true,
+        plan: true, createdAt: true,
+      },
     });
 
     if (!user) {
@@ -120,11 +124,11 @@ router.post('/change-password', authRequired, async (req: AuthRequest, res: Resp
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
-      throw new AppError(400, 'Aktualne i nowe haslo sa wymagane');
+      throw new AppError(400, 'Current and new password are required');
     }
 
     if (newPassword.length < 6) {
-      throw new AppError(400, 'Nowe haslo musi miec minimum 6 znakow');
+      throw new AppError(400, 'New password must be at least 6 characters');
     }
 
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
@@ -132,7 +136,7 @@ router.post('/change-password', authRequired, async (req: AuthRequest, res: Resp
 
     const valid = await bcrypt.compare(currentPassword, user.password);
     if (!valid) {
-      throw new AppError(401, 'Aktualne haslo jest nieprawidlowe');
+      throw new AppError(401, 'Current password is incorrect');
     }
 
     const hashed = await bcrypt.hash(newPassword, 12);
@@ -141,7 +145,7 @@ router.post('/change-password', authRequired, async (req: AuthRequest, res: Resp
       data: { password: hashed },
     });
 
-    res.json({ message: 'Haslo zostalo zmienione' });
+    res.json({ message: 'Password changed successfully' });
   } catch (err) {
     next(err);
   }
@@ -152,40 +156,40 @@ router.get('/stats', authRequired, async (req: AuthRequest, res: Response, next)
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: { id: true, email: true, name: true, plan: true, createdAt: true, stripeCustomerId: true },
+      select: {
+        id: true, email: true, name: true, plan: true,
+        createdAt: true, stripeCustomerId: true, phone: true,
+        avatarUrl: true, bio: true, city: true,
+      },
     });
     if (!user) throw new AppError(404, 'User not found');
 
-    // Total downloads
-    const totalDownloads = await prisma.download.count({
+    const totalListings = await prisma.listing.count({
       where: { userId: req.userId },
     });
 
-    // Downloads by platform
-    const byPlatform = await prisma.download.groupBy({
-      by: ['platform'],
+    const activeListings = await prisma.listing.count({
+      where: { userId: req.userId, status: 'ACTIVE' },
+    });
+
+    const soldListings = await prisma.listing.count({
+      where: { userId: req.userId, status: 'SOLD' },
+    });
+
+    const totalViews = await prisma.listing.aggregate({
       where: { userId: req.userId },
-      _count: { platform: true },
+      _sum: { views: true },
     });
 
-    // Downloads by format
-    const byFormat = await prisma.download.groupBy({
-      by: ['format'],
-      where: { userId: req.userId },
-      _count: { format: true },
+    const favoritesCount = await prisma.favorite.count({
+      where: { listing: { userId: req.userId } },
     });
 
-    // Last 7 days activity
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentDownloads = await prisma.download.count({
-      where: { userId: req.userId, createdAt: { gte: sevenDaysAgo } },
+    const avgRating = await prisma.review.aggregate({
+      where: { reviewedId: req.userId },
+      _avg: { rating: true },
+      _count: { rating: true },
     });
-
-    // Most downloaded platform
-    const topPlatform = byPlatform.length > 0
-      ? byPlatform.reduce((a, b) => a._count.platform > b._count.platform ? a : b)
-      : null;
 
     res.json({
       user: {
@@ -194,13 +198,19 @@ router.get('/stats', authRequired, async (req: AuthRequest, res: Response, next)
         plan: user.plan,
         createdAt: user.createdAt,
         hasStripe: !!user.stripeCustomerId,
+        phone: user.phone,
+        avatarUrl: user.avatarUrl,
+        bio: user.bio,
+        city: user.city,
       },
       stats: {
-        totalDownloads,
-        recentDownloads,
-        byPlatform: byPlatform.map((p) => ({ platform: p.platform, count: p._count.platform })),
-        byFormat: byFormat.map((f) => ({ format: f.format, count: f._count.format })),
-        topPlatform: topPlatform?.platform || null,
+        totalListings,
+        activeListings,
+        soldListings,
+        totalViews: totalViews._sum.views || 0,
+        favoritesCount,
+        avgRating: avgRating._avg.rating || 0,
+        reviewsCount: avgRating._count.rating,
       },
     });
   } catch (err) {

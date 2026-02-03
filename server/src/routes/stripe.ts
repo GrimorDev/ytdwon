@@ -9,18 +9,29 @@ const prisma = new PrismaClient();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// Create checkout session
-router.post('/create-checkout', authRequired, async (req: AuthRequest, res: Response, next) => {
+const PROMOTION_PRICES: Record<string, { days: number; amount: number }> = {
+  '7days': { days: 7, amount: 999 },     // 9.99 PLN
+  '14days': { days: 14, amount: 1799 },   // 17.99 PLN
+  '30days': { days: 30, amount: 2999 },   // 29.99 PLN
+};
+
+// Create checkout for promoting a listing
+router.post('/promote', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
+    const { listingId, plan } = req.body;
+
+    if (!listingId || !plan || !PROMOTION_PRICES[plan]) {
+      throw new AppError(400, 'Valid listing ID and promotion plan are required');
+    }
+
+    const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+    if (!listing) throw new AppError(404, 'Listing not found');
+    if (listing.userId !== req.userId) throw new AppError(403, 'Not authorized');
+
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
     if (!user) throw new AppError(404, 'User not found');
 
-    if (user.plan === 'PREMIUM') {
-      throw new AppError(400, 'Already subscribed to Premium');
-    }
-
     let customerId = user.stripeCustomerId;
-
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email,
@@ -34,18 +45,31 @@ router.post('/create-checkout', authRequired, async (req: AuthRequest, res: Resp
       });
     }
 
+    const priceInfo = PROMOTION_PRICES[plan];
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID!,
+          price_data: {
+            currency: 'pln',
+            product_data: {
+              name: `Promowanie ogloszenia: ${listing.title}`,
+              description: `${priceInfo.days} dni promowania`,
+            },
+            unit_amount: priceInfo.amount,
+          },
           quantity: 1,
         },
       ],
-      mode: 'subscription',
-      success_url: `${process.env.CLIENT_URL}/pricing?success=true`,
-      cancel_url: `${process.env.CLIENT_URL}/pricing?canceled=true`,
+      mode: 'payment',
+      metadata: {
+        listingId,
+        promotionDays: priceInfo.days.toString(),
+      },
+      success_url: `${process.env.CLIENT_URL}/moje-ogloszenia?promoted=true`,
+      cancel_url: `${process.env.CLIENT_URL}/promuj/${listingId}?canceled=true`,
     });
 
     res.json({ url: session.url });
@@ -59,12 +83,12 @@ router.get('/portal', authRequired, async (req: AuthRequest, res: Response, next
   try {
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
     if (!user?.stripeCustomerId) {
-      throw new AppError(400, 'No subscription found');
+      throw new AppError(400, 'No payment history found');
     }
 
     const session = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
-      return_url: `${process.env.CLIENT_URL}/pricing`,
+      return_url: `${process.env.CLIENT_URL}/konto`,
     });
 
     res.json({ url: session.url });
@@ -89,21 +113,21 @@ router.post('/webhook', async (req: Request, res: Response) => {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
-      if (session.customer) {
-        await prisma.user.updateMany({
-          where: { stripeCustomerId: session.customer as string },
-          data: { plan: 'PREMIUM' },
+      const listingId = session.metadata?.listingId;
+      const promotionDays = parseInt(session.metadata?.promotionDays || '0');
+
+      if (listingId && promotionDays > 0) {
+        const promotedUntil = new Date();
+        promotedUntil.setDate(promotedUntil.getDate() + promotionDays);
+
+        await prisma.listing.update({
+          where: { id: listingId },
+          data: {
+            promoted: true,
+            promotedUntil,
+          },
         });
-      }
-      break;
-    }
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription;
-      if (subscription.customer) {
-        await prisma.user.updateMany({
-          where: { stripeCustomerId: subscription.customer as string },
-          data: { plan: 'FREE' },
-        });
+        console.log(`Listing ${listingId} promoted until ${promotedUntil.toISOString()}`);
       }
       break;
     }

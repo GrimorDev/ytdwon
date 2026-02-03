@@ -1,11 +1,11 @@
 import axios from 'axios';
-import type { AuthResponse, VideoInfo, Download, PaginatedResponse, DownloadJob, PlaylistItem, PlaylistJob } from '../types';
+import type { AuthResponse, Listing, Category, Conversation, Message, Review, PaginatedResponse, UserStats } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
 });
 
-// Attach token to requests
+// Attach token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
   if (token) {
@@ -32,7 +32,7 @@ api.interceptors.response.use(
         } catch {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
+          window.location.href = '/logowanie';
         }
       }
     }
@@ -49,82 +49,101 @@ export const authApi = {
   me: () => api.get<{ user: AuthResponse['user'] }>('/auth/me'),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.post<{ message: string }>('/auth/change-password', data),
-  getStats: () => api.get<{
-    user: { name: string; email: string; plan: string; createdAt: string; hasStripe: boolean };
-    stats: {
-      totalDownloads: number;
-      recentDownloads: number;
-      byPlatform: { platform: string; count: number }[];
-      byFormat: { format: string; count: number }[];
-      topPlatform: string | null;
-    };
-  }>('/auth/stats'),
+  getStats: () => api.get<UserStats>('/auth/stats'),
 };
 
-// Download
-export const downloadApi = {
-  getInfo: (url: string) => api.post<VideoInfo>('/download/info', { url }),
-  start: (data: { url: string; quality: string; isAudio: boolean; outputFormat?: string; trimStart?: string; trimEnd?: string }) =>
-    api.post<{ jobId: string }>('/download/start', data),
-  getFileUrl: (filename: string) => `/api/download/file/${filename}`,
-  subscribeProgress: (jobId: string, onData: (job: DownloadJob) => void, onError?: () => void) => {
-    const es = new EventSource(`/api/download/progress/${jobId}`);
-    es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        onData(data);
-        if (data.status === 'done' || data.status === 'error') {
-          es.close();
-        }
-      } catch {}
-    };
-    es.onerror = () => {
-      onError?.();
-      es.close();
-    };
-    return () => es.close();
+// Listings
+export const listingsApi = {
+  getAll: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    city?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    condition?: string;
+    sort?: string;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, val]) => {
+        if (val !== undefined && val !== '') searchParams.set(key, String(val));
+      });
+    }
+    return api.get<PaginatedResponse<Listing>>(`/listings?${searchParams.toString()}`);
   },
-  getPlaylistItems: (url: string) =>
-    api.post<{ title: string; items: PlaylistItem[] }>('/download/playlist-items', { url }),
-  startPlaylist: (data: {
-    items: { id: string; title: string; url: string }[];
-    quality: string;
-    isAudio: boolean;
-    outputFormat?: string;
-  }) => api.post<{ jobId: string }>('/download/playlist/start', data),
-  subscribePlaylistProgress: (jobId: string, onData: (job: PlaylistJob) => void, onError?: () => void) => {
-    const es = new EventSource(`/api/download/playlist/progress/${jobId}`);
-    es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        onData(data);
-        if (data.status === 'done' || data.status === 'error') {
-          es.close();
-        }
-      } catch {}
-    };
-    es.onerror = () => {
-      onError?.();
-      es.close();
-    };
-    return () => es.close();
-  },
+  getMy: (status?: string) =>
+    api.get<{ listings: Listing[] }>(`/listings/my${status ? `?status=${status}` : ''}`),
+  getById: (id: string) => api.get<{ listing: Listing }>(`/listings/${id}`),
+  create: (data: any) => api.post<{ listing: Listing }>('/listings', data),
+  update: (id: string, data: any) => api.put<{ listing: Listing }>(`/listings/${id}`, data),
+  delete: (id: string) => api.delete(`/listings/${id}`),
+  updateStatus: (id: string, status: string) =>
+    api.patch(`/listings/${id}/status`, { status }),
 };
 
-// History
-export const historyApi = {
-  getAll: (page = 1, limit = 20, search?: string, platform?: string) => {
-    let url = `/history?page=${page}&limit=${limit}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    if (platform) url += `&platform=${platform}`;
-    return api.get<PaginatedResponse<Download>>(url);
+// Categories
+export const categoriesApi = {
+  getAll: () => api.get<{ categories: Category[] }>('/categories'),
+  getBySlug: (slug: string) => api.get<{ category: Category }>(`/categories/${slug}`),
+};
+
+// Favorites
+export const favoritesApi = {
+  getAll: () => api.get<{ favorites: { id: string; listing: Listing; createdAt: string }[] }>('/favorites'),
+  toggle: (listingId: string) => api.post<{ favorited: boolean }>(`/favorites/${listingId}`),
+};
+
+// Chat
+export const chatApi = {
+  getConversations: () => api.get<{ conversations: Conversation[] }>('/conversations'),
+  getMessages: (conversationId: string, page?: number) =>
+    api.get<{ messages: Message[] }>(`/conversations/${conversationId}/messages?page=${page || 1}`),
+  startConversation: (listingId: string, message: string) =>
+    api.post<{ conversation: { id: string }; message: Message }>('/conversations', { listingId, message }),
+  sendMessage: (conversationId: string, content: string) =>
+    api.post<{ message: Message }>(`/conversations/${conversationId}/messages`, { content }),
+  getUnreadCount: () => api.get<{ count: number }>('/conversations/unread-count'),
+  markAsRead: (conversationId: string) => api.patch(`/conversations/${conversationId}/read`),
+};
+
+// Reviews
+export const reviewsApi = {
+  getForUser: (userId: string) =>
+    api.get<{ reviews: Review[]; stats: { avgRating: number; count: number } }>(`/reviews/${userId}`),
+  create: (userId: string, data: { rating: number; comment?: string }) =>
+    api.post<{ review: Review }>(`/reviews/${userId}`, data),
+};
+
+// Users
+export const usersApi = {
+  getProfile: (id: string) => api.get<{ user: any }>(`/users/${id}`),
+  updateProfile: (data: any) => api.put<{ user: any }>('/users/profile', data),
+};
+
+// Upload
+export const uploadApi = {
+  images: (files: File[]) => {
+    const formData = new FormData();
+    files.forEach(f => formData.append('images', f));
+    return api.post<{ urls: string[] }>('/upload/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
-  delete: (id: string) => api.delete(`/history/${id}`),
+  avatar: (file: File) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return api.post<{ url: string }>('/upload/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // Stripe
 export const stripeApi = {
-  createCheckout: () => api.post<{ url: string }>('/stripe/create-checkout'),
+  promote: (listingId: string, plan: string) =>
+    api.post<{ url: string }>('/stripe/promote', { listingId, plan }),
   getPortal: () => api.get<{ url: string }>('/stripe/portal'),
 };
 

@@ -9,7 +9,6 @@ COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 
 RUN npm ci
-
 RUN npx prisma generate
 
 COPY tsconfig.json ./
@@ -21,39 +20,24 @@ FROM node:20-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
-    python3 \
-    python3-pip \
-    ffmpeg \
-    curl \
-    netcat-openbsd \
     ca-certificates \
-    unzip \
-  && curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh \
-  && python3 -m pip install --break-system-packages -U "yt-dlp[default]" bgutil-ytdlp-pot-provider \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
-
-# yt-dlp config — overwritten by entrypoint at runtime
-RUN echo '--js-runtimes deno' > /etc/yt-dlp.conf
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 RUN npm ci --omit=dev
-
 RUN npx prisma generate
 
 COPY --from=builder /app/dist ./dist
 
-COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh && sed -i 's/\r$//' docker-entrypoint.sh
-
-RUN mkdir -p /app/downloads
+RUN mkdir -p /app/uploads
 
 ENV NODE_ENV=production
 ENV PORT=3001
 
 EXPOSE 3001
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]

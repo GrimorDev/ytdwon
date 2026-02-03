@@ -2,6 +2,10 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  phone?: string;
+  avatarUrl?: string;
+  bio?: string;
+  city?: string;
   plan: 'FREE' | 'PREMIUM';
   createdAt?: string;
 }
@@ -12,68 +16,107 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
-export interface VideoInfo {
-  title: string;
-  thumbnail: string;
-  duration: number;
-  formats: FormatInfo[];
-  platform: Platform;
-  isPlaylist: boolean;
-  playlistCount?: number;
-}
-
-export interface FormatInfo {
-  formatId: string;
-  ext: string;
-  quality: string;
-  resolution?: string;
-  filesize?: number;
-  isAudioOnly: boolean;
-}
-
-export type Platform = 'YOUTUBE' | 'FACEBOOK' | 'TWITTER' | 'TIKTOK' | 'INSTAGRAM';
-
-export interface DownloadJob {
+export interface Category {
   id: string;
-  status: 'queued' | 'fetching_info' | 'downloading' | 'converting' | 'done' | 'error';
-  progress: number;
-  speed?: string;
-  eta?: string;
-  title: string;
-  thumbnail: string;
-  platform: Platform;
-  filename?: string;
-  error?: string;
-  format: string;
-  isAudio: boolean;
-  quality: string;
-  url: string;
+  name: string;
+  namePl: string;
+  nameEn: string;
+  icon: string;
+  slug: string;
+  parentId?: string;
+  children?: Category[];
+  _count?: { listings: number };
 }
 
-export interface QueueItem {
+export interface ListingImage {
   id: string;
   url: string;
-  quality: string;
-  isAudio: boolean;
-  outputFormat: string;
-  title?: string;
-  thumbnail?: string;
+  order: number;
 }
 
-export interface Download {
+export interface Listing {
   id: string;
-  url: string;
-  platform: Platform;
   title: string;
-  thumbnailUrl: string | null;
-  format: 'VIDEO' | 'AUDIO';
-  quality: string;
-  filename: string;
+  description: string;
+  price: number;
+  currency: string;
+  condition: 'NEW' | 'USED' | 'DAMAGED';
+  status: 'ACTIVE' | 'SOLD' | 'ARCHIVED';
+  promoted: boolean;
+  promotedUntil?: string;
+  views: number;
+  city: string;
+  latitude?: number;
+  longitude?: number;
+  userId: string;
+  categoryId: string;
+  images: ListingImage[];
+  category?: Category;
+  user?: ListingUser;
+  isFavorited?: boolean;
+  favoritesCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListingUser {
+  id: string;
+  name: string;
+  city?: string;
+  avatarUrl?: string;
+  createdAt?: string;
+  phone?: string;
+  avgRating?: number;
+  _count?: { listings: number; reviewsReceived: number };
+  listingsCount?: number;
+  reviewsCount?: number;
+}
+
+export interface Conversation {
+  id: string;
+  listing: {
+    id: string;
+    title: string;
+    price: number;
+    images: ListingImage[];
+  };
+  otherUser: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
+  lastMessage: Message | null;
+  unreadCount: number;
+  updatedAt: string;
+}
+
+export interface Message {
+  id: string;
+  content: string;
+  senderId: string;
+  sender: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
+  read: boolean;
+  createdAt: string;
+}
+
+export interface Review {
+  id: string;
+  rating: number;
+  comment?: string;
+  reviewer: {
+    id: string;
+    name: string;
+    avatarUrl?: string;
+  };
   createdAt: string;
 }
 
 export interface PaginatedResponse<T> {
-  downloads: T[];
+  listings: T[];
   pagination: {
     page: number;
     limit: number;
@@ -82,23 +125,15 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface PlaylistItem {
-  id: string;
-  title: string;
-  thumbnail: string;
-  duration: number;
-  url: string;
-  index: number;
-}
-
-export interface PlaylistJob {
-  id: string;
-  status: 'downloading' | 'zipping' | 'done' | 'error';
-  totalItems: number;
-  completedItems: number;
-  failedItems: number;
-  currentItemTitle: string;
-  currentItemProgress: number;
-  zipFilename?: string;
-  error?: string;
+export interface UserStats {
+  user: User & { hasStripe: boolean };
+  stats: {
+    totalListings: number;
+    activeListings: number;
+    soldListings: number;
+    totalViews: number;
+    favoritesCount: number;
+    avgRating: number;
+    reviewsCount: number;
+  };
 }

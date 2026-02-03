@@ -12,43 +12,144 @@ enum Plan {
   PREMIUM
 }
 
-enum Platform {
-  YOUTUBE
-  FACEBOOK
-  TWITTER
-  TIKTOK
-  INSTAGRAM
+enum Condition {
+  NEW
+  USED
+  DAMAGED
 }
 
-enum DownloadFormat {
-  VIDEO
-  AUDIO
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  ARCHIVED
 }
 
 model User {
-  id               String     @id @default(uuid())
-  email            String     @unique
+  id               String         @id @default(uuid())
+  email            String         @unique
   password         String
   name             String
-  plan             Plan       @default(FREE)
+  phone            String?
+  avatarUrl        String?
+  bio              String?
+  city             String?
+  latitude         Float?
+  longitude        Float?
+  plan             Plan           @default(FREE)
   stripeCustomerId String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  downloads        Download[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  listings         Listing[]
+  favorites        Favorite[]
+  reviewsGiven     Review[]       @relation("reviewer")
+  reviewsReceived  Review[]       @relation("reviewed")
+  sentMessages     Message[]      @relation("sender")
+  conversations1   Conversation[] @relation("participant1")
+  conversations2   Conversation[] @relation("participant2")
 }
 
-model Download {
-  id           String         @id @default(uuid())
-  userId       String?
-  user         User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  url          String
-  platform     Platform
-  title        String
-  thumbnailUrl String?
-  format       DownloadFormat
-  quality      String
-  filename     String
-  createdAt    DateTime       @default(now())
+model Category {
+  id       String     @id @default(uuid())
+  name     String     @unique
+  namePl   String
+  nameEn   String
+  icon     String
+  slug     String     @unique
+  parentId String?
+  parent   Category?  @relation("subcategories", fields: [parentId], references: [id])
+  children Category[] @relation("subcategories")
+  listings Listing[]
+  createdAt DateTime  @default(now())
+}
 
-  @@index([userId, createdAt(sort: Desc)])
+model Listing {
+  id            String        @id @default(uuid())
+  title         String
+  description   String
+  price         Float
+  currency      String        @default("PLN")
+  condition     Condition     @default(USED)
+  status        ListingStatus @default(ACTIVE)
+  promoted      Boolean       @default(false)
+  promotedUntil DateTime?
+  views         Int           @default(0)
+  city          String
+  latitude      Float?
+  longitude     Float?
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      Category      @relation(fields: [categoryId], references: [id])
+  images        Image[]
+  favorites     Favorite[]
+  conversations Conversation[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([categoryId])
+  @@index([userId])
+  @@index([status])
+  @@index([city])
+  @@index([promoted])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Image {
+  id        String  @id @default(uuid())
+  url       String
+  order     Int     @default(0)
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+}
+
+model Conversation {
+  id             String    @id @default(uuid())
+  listingId      String
+  listing        Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  participant1Id String
+  participant1   User      @relation("participant1", fields: [participant1Id], references: [id])
+  participant2Id String
+  participant2   User      @relation("participant2", fields: [participant2Id], references: [id])
+  messages       Message[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([listingId, participant1Id, participant2Id])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  senderId       String
+  sender         User         @relation("sender", fields: [senderId], references: [id])
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  rating     Int
+  comment    String?
+  reviewerId String
+  reviewer   User     @relation("reviewer", fields: [reviewerId], references: [id])
+  reviewedId String
+  reviewed   User     @relation("reviewed", fields: [reviewedId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([reviewerId, reviewedId])
 }
