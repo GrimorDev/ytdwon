@@ -19,6 +19,7 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
       maxPrice,
       condition,
       sort = 'newest',
+      userId,
     } = req.query as Record<string, string>;
 
     const pageNum = Math.max(1, parseInt(page));
@@ -28,6 +29,10 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
     const where: Prisma.ListingWhereInput = {
       status: 'ACTIVE',
     };
+
+    if (userId) {
+      where.userId = userId;
+    }
 
     if (search) {
       where.OR = [
@@ -155,8 +160,9 @@ router.get('/my', authRequired, async (req: AuthRequest, res: Response, next) =>
 // Get single listing
 router.get('/:id', authOptional, async (req: AuthRequest, res: Response, next) => {
   try {
+    const id = req.params.id as string;
     const listing = await prisma.listing.findUnique({
-      where: { id: req.params.id },
+      where: { id },
       include: {
         images: { orderBy: { order: 'asc' } },
         category: true,
@@ -205,7 +211,7 @@ router.get('/:id', authOptional, async (req: AuthRequest, res: Response, next) =
         favoritesCount: listing._count.favorites,
         user: {
           ...listing.user,
-          avgRating: avgRating._avg.rating || 0,
+          avgRating: avgRating._avg?.rating || 0,
         },
         _count: undefined,
       },
@@ -275,11 +281,12 @@ router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => 
 // Update listing
 router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
-    const existing = await prisma.listing.findUnique({ where: { id: req.params.id } });
+    const id = req.params.id as string;
+    const existing = await prisma.listing.findUnique({ where: { id } });
     if (!existing) throw new AppError(404, 'Listing not found');
     if (existing.userId !== req.userId) throw new AppError(403, 'Not authorized');
 
-    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images } = req.body;
+    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, status } = req.body;
 
     // If images provided, delete old and create new
     if (images) {
@@ -287,7 +294,7 @@ router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) =
     }
 
     const listing = await prisma.listing.update({
-      where: { id: req.params.id },
+      where: { id },
       data: {
         ...(title && { title }),
         ...(description && { description }),
@@ -295,6 +302,7 @@ router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) =
         ...(currency && { currency }),
         ...(condition && { condition }),
         ...(city && { city }),
+        ...(status && { status }),
         ...(latitude !== undefined && { latitude: latitude ? parseFloat(latitude) : null }),
         ...(longitude !== undefined && { longitude: longitude ? parseFloat(longitude) : null }),
         ...(categoryId && { categoryId }),
@@ -322,12 +330,13 @@ router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) =
 // Delete listing (soft delete -> ARCHIVED)
 router.delete('/:id', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
-    const existing = await prisma.listing.findUnique({ where: { id: req.params.id } });
+    const id = req.params.id as string;
+    const existing = await prisma.listing.findUnique({ where: { id } });
     if (!existing) throw new AppError(404, 'Listing not found');
     if (existing.userId !== req.userId) throw new AppError(403, 'Not authorized');
 
     await prisma.listing.update({
-      where: { id: req.params.id },
+      where: { id },
       data: { status: 'ARCHIVED' },
     });
 
@@ -340,17 +349,18 @@ router.delete('/:id', authRequired, async (req: AuthRequest, res: Response, next
 // Change listing status
 router.patch('/:id/status', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
+    const id = req.params.id as string;
     const { status } = req.body;
     if (!status || !['ACTIVE', 'SOLD', 'ARCHIVED'].includes(status)) {
       throw new AppError(400, 'Invalid status');
     }
 
-    const existing = await prisma.listing.findUnique({ where: { id: req.params.id } });
+    const existing = await prisma.listing.findUnique({ where: { id } });
     if (!existing) throw new AppError(404, 'Listing not found');
     if (existing.userId !== req.userId) throw new AppError(403, 'Not authorized');
 
     const listing = await prisma.listing.update({
-      where: { id: req.params.id },
+      where: { id },
       data: { status },
     });
 

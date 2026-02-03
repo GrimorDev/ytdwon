@@ -32,7 +32,7 @@ router.get('/', authRequired, async (req: AuthRequest, res: Response, next) => {
 
     // Count unread for each conversation
     const withUnread = await Promise.all(
-      conversations.map(async (conv) => {
+      conversations.map(async (conv: any) => {
         const unreadCount = await prisma.message.count({
           where: {
             conversationId: conv.id,
@@ -85,8 +85,9 @@ router.get('/unread-count', authRequired, async (req: AuthRequest, res: Response
 // Get messages in conversation
 router.get('/:id/messages', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
+    const id = req.params.id as string;
     const conversation = await prisma.conversation.findUnique({
-      where: { id: req.params.id },
+      where: { id },
     });
 
     if (!conversation) throw new AppError(404, 'Conversation not found');
@@ -98,7 +99,7 @@ router.get('/:id/messages', authRequired, async (req: AuthRequest, res: Response
     const limit = 50;
 
     const messages = await prisma.message.findMany({
-      where: { conversationId: req.params.id },
+      where: { conversationId: id },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -110,7 +111,7 @@ router.get('/:id/messages', authRequired, async (req: AuthRequest, res: Response
     // Mark as read
     await prisma.message.updateMany({
       where: {
-        conversationId: req.params.id,
+        conversationId: id,
         senderId: { not: req.userId },
         read: false,
       },
@@ -184,8 +185,9 @@ router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => 
 // Send message in existing conversation
 router.post('/:id/messages', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
+    const id = req.params.id as string;
     const conversation = await prisma.conversation.findUnique({
-      where: { id: req.params.id },
+      where: { id },
     });
 
     if (!conversation) throw new AppError(404, 'Conversation not found');
@@ -223,9 +225,10 @@ router.post('/:id/messages', authRequired, async (req: AuthRequest, res: Respons
 // Mark conversation as read
 router.patch('/:id/read', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
+    const id = req.params.id as string;
     await prisma.message.updateMany({
       where: {
-        conversationId: req.params.id,
+        conversationId: id,
         senderId: { not: req.userId },
         read: false,
       },

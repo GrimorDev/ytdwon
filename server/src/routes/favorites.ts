@@ -24,8 +24,8 @@ router.get('/', authRequired, async (req: AuthRequest, res: Response, next) => {
 
     res.json({
       favorites: favorites
-        .filter(f => f.listing.status === 'ACTIVE')
-        .map(f => ({
+        .filter((f: any) => f.listing.status === 'ACTIVE')
+        .map((f: any) => ({
           id: f.id,
           createdAt: f.createdAt,
           listing: { ...f.listing, isFavorited: true },
@@ -39,7 +39,7 @@ router.get('/', authRequired, async (req: AuthRequest, res: Response, next) => {
 // Toggle favorite
 router.post('/:listingId', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
-    const { listingId } = req.params;
+    const listingId = req.params.listingId as string;
 
     const existing = await prisma.favorite.findUnique({
       where: { userId_listingId: { userId: req.userId!, listingId } },
@@ -62,8 +62,9 @@ router.post('/:listingId', authRequired, async (req: AuthRequest, res: Response,
 // Remove favorite
 router.delete('/:listingId', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
+    const listingId = req.params.listingId as string;
     await prisma.favorite.deleteMany({
-      where: { userId: req.userId!, listingId: req.params.listingId },
+      where: { userId: req.userId!, listingId },
     });
     res.json({ message: 'Removed from favorites' });
   } catch (err) {

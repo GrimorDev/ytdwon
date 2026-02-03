@@ -30,8 +30,9 @@ router.get('/', async (_req: Request, res: Response, next) => {
 // Get category by slug
 router.get('/:slug', async (req: Request, res: Response, next) => {
   try {
+    const slug = req.params.slug as string;
     const category = await prisma.category.findUnique({
-      where: { slug: req.params.slug },
+      where: { slug },
       include: {
         children: {
           include: {

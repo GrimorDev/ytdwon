@@ -9,8 +9,9 @@ const prisma = new PrismaClient();
 // Get reviews for a user
 router.get('/:userId', async (req: Request, res: Response, next) => {
   try {
+    const userId = req.params.userId as string;
     const reviews = await prisma.review.findMany({
-      where: { reviewedId: req.params.userId },
+      where: { reviewedId: userId },
       include: {
         reviewer: { select: { id: true, name: true, avatarUrl: true } },
       },
@@ -18,7 +19,7 @@ router.get('/:userId', async (req: Request, res: Response, next) => {
     });
 
     const avg = await prisma.review.aggregate({
-      where: { reviewedId: req.params.userId },
+      where: { reviewedId: userId },
       _avg: { rating: true },
       _count: { rating: true },
     });
@@ -26,9 +27,28 @@ router.get('/:userId', async (req: Request, res: Response, next) => {
     res.json({
       reviews,
       stats: {
-        avgRating: avg._avg.rating || 0,
-        count: avg._count.rating,
+        avgRating: avg._avg?.rating || 0,
+        count: avg._count?.rating || 0,
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get average rating for a user
+router.get('/:userId/rating', async (req: Request, res: Response, next) => {
+  try {
+    const userId = req.params.userId as string;
+    const avg = await prisma.review.aggregate({
+      where: { reviewedId: userId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
+    res.json({
+      average: avg._avg?.rating || 0,
+      count: avg._count?.rating || 0,
     });
   } catch (err) {
     next(err);
@@ -39,7 +59,7 @@ router.get('/:userId', async (req: Request, res: Response, next) => {
 router.post('/:userId', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
     const { rating, comment } = req.body;
-    const reviewedId = req.params.userId;
+    const reviewedId = req.params.userId as string;
 
     if (reviewedId === req.userId) {
       throw new AppError(400, 'Cannot review yourself');

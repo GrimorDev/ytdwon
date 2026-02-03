@@ -9,8 +9,9 @@ const prisma = new PrismaClient();
 // Get public profile
 router.get('/:id', async (req: Request, res: Response, next) => {
   try {
+    const id = req.params.id as string;
     const user = await prisma.user.findUnique({
-      where: { id: req.params.id },
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -20,7 +21,7 @@ router.get('/:id', async (req: Request, res: Response, next) => {
         createdAt: true,
         _count: {
           select: {
-            listings: { where: { status: 'ACTIVE' } },
+            listings: true,
             reviewsReceived: true,
           },
         },
@@ -30,14 +31,14 @@ router.get('/:id', async (req: Request, res: Response, next) => {
     if (!user) throw new AppError(404, 'User not found');
 
     const avgRating = await prisma.review.aggregate({
-      where: { reviewedId: req.params.id },
+      where: { reviewedId: id },
       _avg: { rating: true },
     });
 
     res.json({
       user: {
         ...user,
-        avgRating: avgRating._avg.rating || 0,
+        avgRating: avgRating._avg?.rating || 0,
         listingsCount: user._count.listings,
         reviewsCount: user._count.reviewsReceived,
         _count: undefined,
