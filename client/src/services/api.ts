@@ -64,6 +64,7 @@ export const listingsApi = {
     maxPrice?: number;
     condition?: string;
     sort?: string;
+    userId?: string;
   }) => {
     const searchParams = new URLSearchParams();
     if (params) {
@@ -112,6 +113,8 @@ export const chatApi = {
 export const reviewsApi = {
   getForUser: (userId: string) =>
     api.get<{ reviews: Review[]; stats: { avgRating: number; count: number } }>(`/reviews/${userId}`),
+  getRating: (userId: string) =>
+    api.get<{ average: number; count: number }>(`/reviews/${userId}/rating`),
   create: (userId: string, data: { rating: number; comment?: string }) =>
     api.post<{ review: Review }>(`/reviews/${userId}`, data),
 };

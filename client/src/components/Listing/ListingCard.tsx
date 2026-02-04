@@ -50,7 +50,7 @@ export default function ListingCard({ listing, onFavoriteChange }: Props) {
           </div>
         )}
         {listing.promoted && (
-          <span className="absolute top-2 left-2 badge-promoted">{t.listing.promoted}</span>
+          <span className="absolute top-2 left-2 badge-promoted">{t.listings.promoted}</span>
         )}
         {user && (
           <button onClick={handleFavorite} className="absolute top-2 right-2 p-2 rounded-full bg-black/30 hover:bg-black/50 transition-colors">
@@ -60,9 +60,20 @@ export default function ListingCard({ listing, onFavoriteChange }: Props) {
       </div>
       <div className="p-3">
         <h3 className="font-semibold text-sm line-clamp-2 mb-1">{listing.title}</h3>
-        <p className="text-lg font-bold text-indigo-500">
-          {listing.price.toLocaleString('pl-PL')} {listing.currency}
-        </p>
+        {listing.isOnSale && listing.originalPrice ? (
+          <div>
+            <span className="text-sm text-gray-400 line-through mr-2">
+              {listing.originalPrice.toLocaleString('pl-PL')} {listing.currency}
+            </span>
+            <span className="text-lg font-bold text-red-500">
+              {listing.price.toLocaleString('pl-PL')} {listing.currency}
+            </span>
+          </div>
+        ) : (
+          <p className="text-lg font-bold text-indigo-500">
+            {listing.price.toLocaleString('pl-PL')} {listing.currency}
+          </p>
+        )}
         <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
           <span className="flex items-center gap-1">
             <MapPin className="w-3 h-3" /> {listing.city}

@@ -90,6 +90,9 @@ export const pl = {
     notFound: 'Ogloszenie nie istnieje',
     messagePlaceholder: 'Dzien dobry, czy ogloszenie jest aktualne?',
     startChat: 'Napisz do sprzedawcy',
+    sale: 'Promocja',
+    lowestPrice30d: 'Najnizsza cena z 30 dni',
+    regularPrice: 'Cena regularna',
   },
 
   // Create listing

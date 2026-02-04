@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Camera, LogOut, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { usersApi } from '../services/api';
+import { usersApi, uploadApi } from '../services/api';
 import { useTranslation } from '../i18n';
 
 export default function AccountPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, setUser, logout } = useAuth();
+  const { user, updateUser, logout } = useAuth();
 
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -40,12 +40,12 @@ export default function AccountPage() {
       let avatarUrl = user?.avatarUrl;
 
       if (avatarFile) {
-        const { data } = await usersApi.uploadAvatar(avatarFile);
-        avatarUrl = data.avatarUrl;
+        const { data } = await uploadApi.avatar(avatarFile);
+        avatarUrl = data.url;
       }
 
       const { data } = await usersApi.updateProfile({ name, phone, city, bio });
-      setUser({ ...user!, ...data.user, avatarUrl });
+      updateUser({ ...user!, ...data.user, avatarUrl });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {

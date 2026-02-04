@@ -39,6 +39,9 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
+  originalPrice?: number;
+  lowestPrice30d?: number;
+  isOnSale?: boolean;
   currency: string;
   condition: 'NEW' | 'USED' | 'DAMAGED';
   status: 'ACTIVE' | 'SOLD' | 'ARCHIVED';
@@ -107,6 +110,7 @@ export interface Review {
   id: string;
   rating: number;
   comment?: string;
+  reviewerId: string;
   reviewer: {
     id: string;
     name: string;

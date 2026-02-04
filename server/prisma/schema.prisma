@@ -63,28 +63,32 @@ model Category {
 }
 
 model Listing {
-  id            String        @id @default(uuid())
-  title         String
-  description   String
-  price         Float
-  currency      String        @default("PLN")
-  condition     Condition     @default(USED)
-  status        ListingStatus @default(ACTIVE)
-  promoted      Boolean       @default(false)
-  promotedUntil DateTime?
-  views         Int           @default(0)
-  city          String
-  latitude      Float?
-  longitude     Float?
-  userId        String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categoryId    String
-  category      Category      @relation(fields: [categoryId], references: [id])
-  images        Image[]
-  favorites     Favorite[]
-  conversations Conversation[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String        @id @default(uuid())
+  title           String
+  description     String
+  price           Float
+  originalPrice   Float?
+  lowestPrice30d  Float?
+  isOnSale        Boolean       @default(false)
+  currency        String        @default("PLN")
+  condition       Condition     @default(USED)
+  status          ListingStatus @default(ACTIVE)
+  promoted        Boolean       @default(false)
+  promotedUntil   DateTime?
+  views           Int           @default(0)
+  city            String
+  latitude        Float?
+  longitude       Float?
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId      String
+  category        Category      @relation(fields: [categoryId], references: [id])
+  images          Image[]
+  favorites       Favorite[]
+  conversations   Conversation[]
+  priceHistory    PriceHistory[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([categoryId])
   @@index([userId])
@@ -92,6 +96,16 @@ model Listing {
   @@index([city])
   @@index([promoted])
   @@index([createdAt(sort: Desc)])
+}
+
+model PriceHistory {
+  id        String   @id @default(uuid())
+  price     Float
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([listingId, createdAt])
 }
 
 model Image {

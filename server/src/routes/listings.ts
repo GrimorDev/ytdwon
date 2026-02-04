@@ -286,11 +286,46 @@ router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) =
     if (!existing) throw new AppError(404, 'Listing not found');
     if (existing.userId !== req.userId) throw new AppError(403, 'Not authorized');
 
-    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, status } = req.body;
+    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, status, isOnSale } = req.body;
 
     // If images provided, delete old and create new
     if (images) {
       await prisma.image.deleteMany({ where: { listingId: existing.id } });
+    }
+
+    // Omnibus price tracking
+    let priceData: any = {};
+    if (price !== undefined) {
+      const newPrice = parseFloat(price);
+
+      // Save current price to history
+      await prisma.priceHistory.create({
+        data: { price: existing.price, listingId: id },
+      });
+
+      // Calculate lowest price in last 30 days (Omnibus directive)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const priceHistory = await prisma.priceHistory.findMany({
+        where: { listingId: id, createdAt: { gte: thirtyDaysAgo } },
+        select: { price: true },
+      });
+      const allPrices = [existing.price, ...priceHistory.map(p => p.price)];
+      const lowestPrice30d = Math.min(...allPrices);
+
+      priceData.price = newPrice;
+      priceData.lowestPrice30d = lowestPrice30d;
+
+      // If price is lowered, mark as sale with original price
+      if (newPrice < existing.price) {
+        priceData.originalPrice = existing.originalPrice || existing.price;
+        priceData.isOnSale = true;
+      }
+    }
+
+    // Allow manually toggling sale off
+    if (isOnSale === false) {
+      priceData.isOnSale = false;
+      priceData.originalPrice = null;
     }
 
     const listing = await prisma.listing.update({
@@ -298,7 +333,7 @@ router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) =
       data: {
         ...(title && { title }),
         ...(description && { description }),
-        ...(price !== undefined && { price: parseFloat(price) }),
+        ...priceData,
         ...(currency && { currency }),
         ...(condition && { condition }),
         ...(city && { city }),

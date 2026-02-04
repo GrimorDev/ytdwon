@@ -90,6 +90,9 @@ export const en = {
     notFound: 'Listing not found',
     messagePlaceholder: 'Hi, is this listing still available?',
     startChat: 'Message seller',
+    sale: 'Sale',
+    lowestPrice30d: 'Lowest price in 30 days',
+    regularPrice: 'Regular price',
   },
 
   // Create listing

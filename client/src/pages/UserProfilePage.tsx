@@ -14,10 +14,8 @@ interface UserProfile {
   city?: string;
   bio?: string;
   createdAt: string;
-  _count: {
-    listings: number;
-    reviewsReceived: number;
-  };
+  listingsCount: number;
+  reviewsCount: number;
 }
 
 export default function UserProfilePage() {
@@ -45,16 +43,15 @@ export default function UserProfilePage() {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const [profileRes, listingsRes, reviewsRes, ratingRes] = await Promise.all([
+      const [profileRes, listingsRes, reviewsRes] = await Promise.all([
         usersApi.getProfile(id!),
         listingsApi.getAll({ userId: id }),
-        reviewsApi.getByUser(id!),
-        reviewsApi.getRating(id!)
+        reviewsApi.getForUser(id!),
       ]);
       setProfile(profileRes.data.user);
       setListings(listingsRes.data.listings);
       setReviews(reviewsRes.data.reviews);
-      setRating(ratingRes.data);
+      setRating({ average: reviewsRes.data.stats.avgRating, count: reviewsRes.data.stats.count });
     } catch (err) {
       console.error(err);
     } finally {
@@ -72,8 +69,8 @@ export default function UserProfilePage() {
       setReviewComment('');
       setReviewRating(5);
       // Refresh rating
-      const ratingRes = await reviewsApi.getRating(id!);
-      setRating(ratingRes.data);
+      const reviewsRes = await reviewsApi.getForUser(id!);
+      setRating({ average: reviewsRes.data.stats.avgRating, count: reviewsRes.data.stats.count });
     } catch (err) {
       console.error(err);
     } finally {
@@ -143,11 +140,11 @@ export default function UserProfilePage() {
 
             <div className="flex gap-3 mt-4 justify-center sm:justify-start">
               <div className="text-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <p className="text-lg font-bold">{profile._count.listings}</p>
+                <p className="text-lg font-bold">{profile.listingsCount}</p>
                 <p className="text-xs text-gray-500">{t.user.listings}</p>
               </div>
               <div className="text-center px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <p className="text-lg font-bold">{profile._count.reviewsReceived}</p>
+                <p className="text-lg font-bold">{profile.reviewsCount}</p>
                 <p className="text-xs text-gray-500">{t.user.reviews}</p>
               </div>
             </div>

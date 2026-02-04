@@ -47,6 +47,9 @@ CREATE TABLE "Listing" (
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
+    "originalPrice" DOUBLE PRECISION,
+    "lowestPrice30d" DOUBLE PRECISION,
+    "isOnSale" BOOLEAN NOT NULL DEFAULT false,
     "currency" TEXT NOT NULL DEFAULT 'PLN',
     "condition" "Condition" NOT NULL DEFAULT 'USED',
     "status" "ListingStatus" NOT NULL DEFAULT 'ACTIVE',
@@ -119,6 +122,22 @@ CREATE TABLE "Review" (
 
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateTable
+CREATE TABLE "PriceHistory" (
+    "id" TEXT NOT NULL,
+    "price" DOUBLE PRECISION NOT NULL,
+    "listingId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PriceHistory_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "PriceHistory_listingId_createdAt_idx" ON "PriceHistory"("listingId", "createdAt");
+
+-- AddForeignKey
+ALTER TABLE "PriceHistory" ADD CONSTRAINT "PriceHistory_listingId_fkey" FOREIGN KEY ("listingId") REFERENCES "Listing"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
