@@ -1,2 +1,0 @@
--- This migration is no longer valid for the Vipile schema.
--- Delete this migrations folder and run prisma migrate dev to create a fresh migration.
