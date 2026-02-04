@@ -106,7 +106,7 @@ export default function ListingDetailPage() {
               </>
             ) : (
               <div className="aspect-video flex items-center justify-center text-gray-400">
-                <span className="text-lg">{t.listing.noPhotos}</span>
+                <span className="text-lg">{t.detail.noPhotos}</span>
               </div>
             )}
           </div>
@@ -124,7 +124,7 @@ export default function ListingDetailPage() {
 
           {/* Title + Price */}
           <div>
-            {listing.promoted && <span className="badge-promoted mb-2 inline-block">{t.listing.promoted}</span>}
+            {listing.promoted && <span className="badge-promoted mb-2 inline-block">{t.listings.promoted}</span>}
             <h1 className="text-2xl md:text-3xl font-bold">{listing.title}</h1>
             <p className="text-3xl font-bold text-indigo-500 mt-2">
               {listing.price.toLocaleString('pl-PL')} {listing.currency}
@@ -134,14 +134,14 @@ export default function ListingDetailPage() {
           {/* Meta */}
           <div className="flex flex-wrap gap-4 text-sm text-gray-500">
             <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {listing.city}</span>
-            <span className="flex items-center gap-1"><Eye className="w-4 h-4" /> {listing.views} {t.listing.views}</span>
+            <span className="flex items-center gap-1"><Eye className="w-4 h-4" /> {listing.views} {t.detail.views}</span>
             <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {new Date(listing.createdAt).toLocaleDateString('pl-PL')}</span>
             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800">{conditionLabel(listing.condition)}</span>
           </div>
 
           {/* Description */}
           <div className="card">
-            <h2 className="font-semibold text-lg mb-3">{t.listing.description}</h2>
+            <h2 className="font-semibold text-lg mb-3">{t.detail.description}</h2>
             <p className="whitespace-pre-wrap leading-relaxed">{listing.description}</p>
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function ListingDetailPage() {
               {listing.user.phone && (
                 <button onClick={() => setShowPhone(!showPhone)} className="w-full btn-secondary !py-2.5 flex items-center justify-center gap-2 mb-3">
                   <Phone className="w-4 h-4" />
-                  {showPhone ? listing.user.phone : t.listing.showPhone}
+                  {showPhone ? listing.user.phone : t.detail.showPhone}
                 </button>
               )}
 
@@ -183,7 +183,7 @@ export default function ListingDetailPage() {
                 <>
                   <button onClick={handleFavorite} className={`w-full !py-2.5 flex items-center justify-center gap-2 mb-3 ${favorited ? 'btn-danger' : 'btn-outline'}`}>
                     <Heart className={`w-4 h-4 ${favorited ? 'fill-current' : ''}`} />
-                    {favorited ? t.listing.removeFavorite : t.listing.addFavorite}
+                    {favorited ? t.detail.removeFromFavorites : t.detail.addToFavorites}
                   </button>
 
                   {/* Message seller */}
@@ -191,12 +191,12 @@ export default function ListingDetailPage() {
                     <textarea
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder={t.listing.messagePlaceholder}
+                      placeholder={t.detail.messagePlaceholder}
                       className="input-field !py-2 min-h-[80px] resize-none"
                     />
                     <button onClick={handleSendMessage} disabled={!message.trim() || sending} className="w-full btn-primary !py-2.5 flex items-center justify-center gap-2">
                       <MessageCircle className="w-4 h-4" />
-                      {sending ? '...' : t.listing.sendMessage}
+                      {sending ? '...' : t.detail.sendMessage}
                     </button>
                   </div>
                 </>
@@ -205,11 +205,11 @@ export default function ListingDetailPage() {
               {user && user.id === listing.userId && (
                 <div className="space-y-2">
                   <Link to={`/edytuj/${listing.id}`} className="w-full btn-primary !py-2.5 block text-center">
-                    {t.listing.edit}
+                    {t.detail.edit}
                   </Link>
                   {!listing.promoted && (
                     <Link to={`/promuj/${listing.id}`} className="w-full btn-outline !py-2.5 block text-center">
-                      {t.listing.promote}
+                      {t.detail.promote}
                     </Link>
                   )}
                 </div>
@@ -220,7 +220,7 @@ export default function ListingDetailPage() {
           {/* Category */}
           {listing.category && (
             <div className="card">
-              <p className="text-sm text-gray-500">{t.listing.category}</p>
+              <p className="text-sm text-gray-500">{t.detail.category}</p>
               <Link to={`/kategoria/${listing.category.slug}`} className="text-indigo-500 font-medium hover:underline">
                 {lang === 'pl' ? listing.category.namePl : listing.category.nameEn}
               </Link>

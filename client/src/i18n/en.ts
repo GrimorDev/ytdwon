@@ -68,6 +68,7 @@ export const en = {
 
   // Listing detail
   detail: {
+    noPhotos: 'No photos',
     sendMessage: 'Send message',
     callSeller: 'Call seller',
     showPhone: 'Show number',

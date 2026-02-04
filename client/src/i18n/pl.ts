@@ -68,6 +68,7 @@ export const pl = {
 
   // Listing detail
   detail: {
+    noPhotos: 'Brak zdjec',
     sendMessage: 'Wyslij wiadomosc',
     callSeller: 'Zadzwon do sprzedawcy',
     showPhone: 'Pokaz numer',
