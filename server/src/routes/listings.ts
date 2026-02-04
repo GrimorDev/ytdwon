@@ -204,15 +204,24 @@ router.get('/:id', authOptional, async (req: AuthRequest, res: Response, next) =
       _avg: { rating: true },
     });
 
+    const userWithCounts = {
+      id: listing.user.id,
+      name: listing.user.name,
+      city: listing.user.city,
+      avatarUrl: listing.user.avatarUrl,
+      createdAt: listing.user.createdAt,
+      phone: listing.user.phone,
+      avgRating: avgRating._avg?.rating || 0,
+      listingsCount: (listing.user as any)._count?.listings || 0,
+      reviewsCount: (listing.user as any)._count?.reviewsReceived || 0,
+    };
+
     res.json({
       listing: {
         ...listing,
         isFavorited,
         favoritesCount: listing._count.favorites,
-        user: {
-          ...listing.user,
-          avgRating: avgRating._avg?.rating || 0,
-        },
+        user: userWithCounts,
         _count: undefined,
       },
     });

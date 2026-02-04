@@ -11,7 +11,7 @@ export default function ChatPage() {
   const { t } = useTranslation();
   const { conversationId } = useParams<{ conversationId?: string }>();
   const { user } = useAuth();
-  const { socket, isConnected } = useSocket();
+  const { socket, connected } = useSocket();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -35,21 +35,29 @@ export default function ChatPage() {
     if (socket && conversationId) {
       socket.emit('join_conversation', conversationId);
 
-      socket.on('new_message', (message: Message) => {
-        if (message.conversationId === conversationId) {
+      const handleNewMessage = (message: Message & { conversationId?: string }) => {
+        const msgConvId = message.conversationId;
+        if (msgConvId === conversationId) {
           setMessages(prev => [...prev, message]);
           scrollToBottom();
+          // Mark as read since we're viewing this conversation
+          markAsRead(conversationId);
         }
-        // Update conversation list
-        setConversations(prev => prev.map(c =>
-          c.id === message.conversationId
-            ? { ...c, messages: [message], updatedAt: message.createdAt }
-            : c
-        ));
-      });
+        // Update conversation list with new last message
+        if (msgConvId) {
+          setConversations(prev => prev.map(c =>
+            c.id === msgConvId
+              ? { ...c, lastMessage: message, updatedAt: message.createdAt }
+              : c
+          ));
+        }
+      };
+
+      socket.on('new_message', handleNewMessage);
 
       return () => {
-        socket.off('new_message');
+        socket.off('new_message', handleNewMessage);
+        socket.emit('leave_conversation', conversationId);
       };
     }
   }, [socket, conversationId]);
@@ -81,13 +89,19 @@ export default function ChatPage() {
   const markAsRead = async (convId: string) => {
     try {
       await chatApi.markAsRead(convId);
+      // Update unread count in conversations list
+      setConversations(prev => prev.map(c =>
+        c.id === convId ? { ...c, unreadCount: 0 } : c
+      ));
     } catch (err) {
       console.error(err);
     }
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -99,6 +113,12 @@ export default function ChatPage() {
       const { data } = await chatApi.sendMessage(conversationId, newMessage.trim());
       setMessages(prev => [...prev, data.message]);
       setNewMessage('');
+      // Update conversation list
+      setConversations(prev => prev.map(c =>
+        c.id === conversationId
+          ? { ...c, lastMessage: data.message, updatedAt: data.message.createdAt }
+          : c
+      ));
       scrollToBottom();
     } catch (err) {
       console.error(err);
@@ -108,9 +128,6 @@ export default function ChatPage() {
   };
 
   const activeConversation = conversations.find(c => c.id === conversationId);
-  const otherUser = activeConversation
-    ? (activeConversation.participant1.id === user?.id ? activeConversation.participant2 : activeConversation.participant1)
-    : null;
 
   if (loading) {
     return (
@@ -138,10 +155,10 @@ export default function ChatPage() {
           ) : (
             <div className="flex-1 overflow-y-auto">
               {conversations.map(conv => {
-                const other = conv.participant1.id === user?.id ? conv.participant2 : conv.participant1;
-                const lastMessage = conv.messages?.[0];
+                const other = conv.otherUser;
+                const lastMsg = conv.lastMessage;
                 const isActive = conv.id === conversationId;
-                const hasUnread = lastMessage && !lastMessage.read && lastMessage.senderId !== user?.id;
+                const hasUnread = conv.unreadCount > 0;
 
                 return (
                   <Link
@@ -164,12 +181,16 @@ export default function ChatPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <span className="font-medium truncate">{other.name}</span>
-                          {hasUnread && <span className="w-2 h-2 bg-indigo-500 rounded-full" />}
+                          {hasUnread && (
+                            <span className="w-5 h-5 bg-indigo-500 rounded-full text-white text-xs flex items-center justify-center flex-shrink-0">
+                              {conv.unreadCount}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-gray-500 truncate">{conv.listing.title}</p>
-                        {lastMessage && (
+                        {lastMsg && (
                           <p className={`text-sm truncate ${hasUnread ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-                            {lastMessage.senderId === user?.id ? `${t.chat.you}: ` : ''}{lastMessage.content}
+                            {lastMsg.senderId === user?.id ? `${t.chat.you}: ` : ''}{lastMsg.content}
                           </p>
                         )}
                       </div>
@@ -191,23 +212,23 @@ export default function ChatPage() {
                   <ArrowLeft className="w-5 h-5" />
                 </Link>
                 <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                  {otherUser?.avatarUrl ? (
-                    <img src={otherUser.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  {activeConversation.otherUser.avatarUrl ? (
+                    <img src={activeConversation.otherUser.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
                   ) : (
                     <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
-                      {otherUser?.name.charAt(0).toUpperCase()}
+                      {activeConversation.otherUser.name.charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
                 <div className="flex-1">
-                  <Link to={`/uzytkownik/${otherUser?.id}`} className="font-medium hover:text-indigo-500">
-                    {otherUser?.name}
+                  <Link to={`/uzytkownik/${activeConversation.otherUser.id}`} className="font-medium hover:text-indigo-500">
+                    {activeConversation.otherUser.name}
                   </Link>
                   <Link to={`/ogloszenia/${activeConversation.listing.id}`} className="text-sm text-gray-500 block hover:text-indigo-500">
                     {activeConversation.listing.title}
                   </Link>
                 </div>
-                {!isConnected && (
+                {!connected && (
                   <span className="text-xs text-red-500">{t.chat.offline}</span>
                 )}
               </div>

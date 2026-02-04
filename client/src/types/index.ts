@@ -97,6 +97,7 @@ export interface Message {
   id: string;
   content: string;
   senderId: string;
+  conversationId?: string;
   sender: {
     id: string;
     name: string;
