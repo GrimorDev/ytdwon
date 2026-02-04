@@ -44,7 +44,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(name, email, password);
+      await register(email, password, name);
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.error || t.auth.registerError);
