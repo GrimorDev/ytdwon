@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag, Copy, Check } from 'lucide-react';
+import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag, Copy, Check, ExternalLink, Ban, Maximize2 } from 'lucide-react';
 import { listingsApi, favoritesApi, chatApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
@@ -26,6 +26,8 @@ export default function ListingDetailPage() {
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [locationCopied, setLocationCopied] = useState(false);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -57,16 +59,50 @@ export default function ListingDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Close share menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+        setShowShareMenu(false);
+      }
+    };
+    if (showShareMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showShareMenu]);
+
   const handleShare = () => {
     setShowShareMenu(!showShareMenu);
   };
 
   const copyLink = async () => {
+    const url = window.location.href;
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // Fallback for non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
+      setTimeout(() => {
+        setCopied(false);
+        setShowShareMenu(false);
+      }, 1500);
+    } catch {
+      // Last resort: prompt user to copy manually
+      window.prompt(lang === 'pl' ? 'Skopiuj link:' : 'Copy link:', url);
+    }
   };
 
   const handleFavorite = async () => {
@@ -141,6 +177,9 @@ export default function ListingDetailPage() {
   if (!listing) return null;
 
   const images = listing.images || [];
+  const isSold = listing.status === 'SOLD';
+  const isReserved = listing.status === 'RESERVED';
+  const isInactive = isSold || isReserved;
 
   return (
     <>
@@ -208,14 +247,24 @@ export default function ListingDetailPage() {
 
                   {/* Badges */}
                   <div className="absolute top-3 left-3 flex gap-2">
-                    {listing.promoted && (
+                    {listing.promoted && !isInactive && (
                       <span className="px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg">
                         {t.listings.promoted}
                       </span>
                     )}
-                    {listing.isOnSale && (
+                    {listing.isOnSale && !isInactive && (
                       <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-lg">
                         {t.detail.sale}
+                      </span>
+                    )}
+                    {isSold && (
+                      <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full shadow-lg">
+                        {lang === 'pl' ? 'Sprzedane' : 'Sold'}
+                      </span>
+                    )}
+                    {isReserved && (
+                      <span className="px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow-lg">
+                        {lang === 'pl' ? 'Zarezerwowane' : 'Reserved'}
                       </span>
                     )}
                   </div>
@@ -296,9 +345,33 @@ export default function ListingDetailPage() {
                 {/* Title */}
                 <h1 className="text-2xl font-bold leading-tight mb-4">{listing.title}</h1>
 
+                {/* Sold/Reserved status banner */}
+                {isSold && (
+                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2">
+                    <Ban className="w-5 h-5 text-red-500 flex-shrink-0" />
+                    <span className="text-red-600 dark:text-red-400 font-semibold text-sm">
+                      {lang === 'pl' ? 'To ogłoszenie zostało sprzedane' : 'This listing has been sold'}
+                    </span>
+                  </div>
+                )}
+                {isReserved && (
+                  <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                    <span className="text-amber-600 dark:text-amber-400 font-semibold text-sm">
+                      {lang === 'pl' ? 'To ogłoszenie jest zarezerwowane' : 'This listing is reserved'}
+                    </span>
+                  </div>
+                )}
+
                 {/* Price */}
                 <div className="pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
-                  {listing.isOnSale && listing.originalPrice ? (
+                  {isSold ? (
+                    <div className="relative inline-block">
+                      <p className="text-3xl font-bold text-gray-400 line-through">
+                        {listing.price.toLocaleString('pl-PL')} {listing.currency}
+                      </p>
+                    </div>
+                  ) : listing.isOnSale && listing.originalPrice ? (
                     <div>
                       <div className="flex items-baseline gap-3">
                         <span className="text-lg text-gray-400 line-through">
@@ -319,7 +392,7 @@ export default function ListingDetailPage() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                    <p className={`text-3xl font-bold ${isReserved ? 'text-amber-600 dark:text-amber-400' : 'text-primary-600 dark:text-primary-400'}`}>
                       {listing.price.toLocaleString('pl-PL')} {listing.currency}
                     </p>
                   )}
@@ -358,7 +431,7 @@ export default function ListingDetailPage() {
                   )}
 
                   {/* Share button */}
-                  <div className="relative">
+                  <div className="relative" ref={shareMenuRef}>
                     <button
                       onClick={handleShare}
                       className="py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-medium transition-all text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
@@ -488,6 +561,74 @@ export default function ListingDetailPage() {
                       )}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Location block */}
+              {listing.city && (
+                <div className="card !p-6">
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    {t.detail.location}
+                  </h3>
+
+                  {/* Map */}
+                  {listing.latitude && listing.longitude ? (
+                    <div className="relative rounded-xl overflow-hidden mb-3 group/map">
+                      <iframe
+                        title="location-map"
+                        width="100%"
+                        height="200"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${listing.longitude - 0.01},${listing.latitude - 0.007},${listing.longitude + 0.01},${listing.latitude + 0.007}&layer=mapnik&marker=${listing.latitude},${listing.longitude}`}
+                      />
+                      <a
+                        href={`https://www.openstreetmap.org/?mlat=${listing.latitude}&mlon=${listing.longitude}#map=15/${listing.latitude}/${listing.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/map:bg-black/20 transition-colors cursor-pointer"
+                      >
+                        <span className="opacity-0 group-hover/map:opacity-100 transition-opacity bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-1.5">
+                          <Maximize2 className="w-4 h-4" />
+                          {lang === 'pl' ? 'Powiększ mapę' : 'Enlarge map'}
+                        </span>
+                      </a>
+                    </div>
+                  ) : null}
+
+                  {/* Address */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <MapPin className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                      <span>{listing.city}</span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const address = listing.city;
+                        try {
+                          if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(address);
+                          } else {
+                            const ta = document.createElement('textarea');
+                            ta.value = address;
+                            ta.style.position = 'fixed';
+                            ta.style.left = '-999999px';
+                            document.body.appendChild(ta);
+                            ta.select();
+                            document.execCommand('copy');
+                            ta.remove();
+                          }
+                          setLocationCopied(true);
+                          setTimeout(() => setLocationCopied(false), 2000);
+                        } catch {}
+                      }}
+                      className="flex items-center gap-1 text-xs text-primary-500 hover:text-primary-600 transition-colors px-2 py-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                    >
+                      {locationCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {locationCopied ? (lang === 'pl' ? 'Skopiowano' : 'Copied') : (lang === 'pl' ? 'Kopiuj' : 'Copy')}
+                    </button>
+                  </div>
                 </div>
               )}
 

@@ -9,7 +9,7 @@ export default function MyListingsPage() {
   const { t } = useTranslation();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'SOLD' | 'ARCHIVED'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'SOLD' | 'RESERVED' | 'ARCHIVED'>('ALL');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function MyListingsPage() {
     }
   };
 
-  const handleStatusChange = async (id: string, status: 'ACTIVE' | 'SOLD' | 'ARCHIVED') => {
+  const handleStatusChange = async (id: string, status: 'ACTIVE' | 'SOLD' | 'RESERVED' | 'ARCHIVED') => {
     try {
       await listingsApi.updateStatus(id, status);
       setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l));
@@ -54,7 +54,8 @@ export default function MyListingsPage() {
   const getStatusBadge = (status: string) => {
     const styles = {
       ACTIVE: 'bg-green-500/10 text-green-500',
-      SOLD: 'bg-blue-500/10 text-blue-500',
+      SOLD: 'bg-red-500/10 text-red-500',
+      RESERVED: 'bg-amber-500/10 text-amber-500',
       ARCHIVED: 'bg-gray-500/10 text-gray-500',
     };
     return styles[status as keyof typeof styles] || styles.ARCHIVED;
@@ -80,7 +81,7 @@ export default function MyListingsPage() {
 
       {/* Filters */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {(['ALL', 'ACTIVE', 'SOLD', 'ARCHIVED'] as const).map(f => (
+        {(['ALL', 'ACTIVE', 'RESERVED', 'SOLD', 'ARCHIVED'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -169,6 +170,11 @@ export default function MyListingsPage() {
                       {listing.status !== 'ACTIVE' && (
                         <button onClick={() => handleStatusChange(listing.id, 'ACTIVE')} className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
                           {t.myListings.markActive}
+                        </button>
+                      )}
+                      {listing.status !== 'RESERVED' && (
+                        <button onClick={() => handleStatusChange(listing.id, 'RESERVED')} className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+                          {t.myListings.markReserved}
                         </button>
                       )}
                       {listing.status !== 'SOLD' && (

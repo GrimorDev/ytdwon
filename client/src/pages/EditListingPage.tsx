@@ -143,14 +143,17 @@ export default function EditListingPage() {
         <div className="card">
           <h2 className="font-semibold mb-3">{t.edit.statusLabel}</h2>
           <div className="flex gap-3">
-            {['ACTIVE', 'SOLD', 'ARCHIVED'].map(s => (
+            {['ACTIVE', 'RESERVED', 'SOLD', 'ARCHIVED'].map(s => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setStatus(s)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   status === s
-                    ? s === 'ACTIVE' ? 'bg-green-600 text-white' : s === 'SOLD' ? 'bg-blue-600 text-white' : 'bg-gray-600 text-white'
+                    ? s === 'ACTIVE' ? 'bg-green-600 text-white'
+                      : s === 'RESERVED' ? 'bg-amber-500 text-white'
+                      : s === 'SOLD' ? 'bg-red-600 text-white'
+                      : 'bg-gray-600 text-white'
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                 }`}
               >

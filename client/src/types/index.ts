@@ -45,7 +45,7 @@ export interface Listing {
   isOnSale?: boolean;
   currency: string;
   condition: 'NEW' | 'USED' | 'DAMAGED';
-  status: 'ACTIVE' | 'SOLD' | 'ARCHIVED';
+  status: 'ACTIVE' | 'SOLD' | 'RESERVED' | 'ARCHIVED';
   promoted: boolean;
   promotedUntil?: string;
   views: number;

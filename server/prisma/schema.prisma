@@ -21,6 +21,7 @@ enum Condition {
 enum ListingStatus {
   ACTIVE
   SOLD
+  RESERVED
   ARCHIVED
 }
 

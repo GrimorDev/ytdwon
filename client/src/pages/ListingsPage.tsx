@@ -15,6 +15,7 @@ import ListingCard from '../components/Listing/ListingCard';
 import { useTranslation } from '../i18n';
 import CategoryFilters from '../components/Listing/CategoryFilters';
 import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrumbs';
+import { addSavedSearch, removeSavedSearch, isSearchSaved, getSavedSearches, type SavedSearch } from '../utils/savedSearches';
 
 // Polish cities for autocomplete
 const POLISH_CITIES = [
@@ -48,6 +49,8 @@ export default function ListingsPage() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [locationQuery, setLocationQuery] = useState(searchParams.get('city') || '');
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [searchWatched, setSearchWatched] = useState(false);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
 
   // URL params
   const page = parseInt(searchParams.get('page') || '1');
@@ -81,6 +84,17 @@ export default function ListingsPage() {
   useEffect(() => {
     categoriesApi.getAll().then(({ data }) => setCategories(data.categories)).catch(() => {});
   }, []);
+
+  // Check if current search is watched
+  useEffect(() => {
+    const hasContent = search || city || slug;
+    if (hasContent) {
+      setSearchWatched(isSearchSaved(search, city, slug));
+    } else {
+      setSearchWatched(false);
+    }
+    setSavedSearches(getSavedSearches());
+  }, [search, city, slug]);
 
   // Build attributes object from URL params
   const urlAttrFilters = useMemo(() => {
@@ -261,12 +275,69 @@ export default function ListingsPage() {
           </button>
         </form>
 
-        {/* Quick filter buttons */}
-        <div className="flex items-center gap-2 mt-3 flex-wrap">
-          <button className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-500 flex items-center gap-1">
-            <Heart className="w-4 h-4" />
-            {lang === 'pl' ? 'Obserwuj wyszukiwanie' : 'Watch search'}
-          </button>
+        {/* Quick filter buttons + saved searches */}
+        <div className="flex items-center gap-3 mt-3 flex-wrap">
+          {(search || city || slug) && (
+            <button
+              onClick={() => {
+                if (searchWatched) {
+                  const saved = getSavedSearches().find(
+                    s => s.query === search && (s.city || '') === (city || '') && (s.category || '') === (slug || '')
+                  );
+                  if (saved) {
+                    removeSavedSearch(saved.id);
+                    setSearchWatched(false);
+                    setSavedSearches(getSavedSearches());
+                  }
+                } else {
+                  addSavedSearch({
+                    query: search,
+                    city: city || undefined,
+                    category: slug || undefined,
+                    categoryName: currentCategory
+                      ? (lang === 'pl' ? currentCategory.namePl : currentCategory.nameEn)
+                      : undefined,
+                  });
+                  setSearchWatched(true);
+                  setSavedSearches(getSavedSearches());
+                }
+              }}
+              className={`text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${
+                searchWatched
+                  ? 'bg-red-50 dark:bg-red-900/20 text-red-500 border-red-200 dark:border-red-800'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-primary-500 hover:border-primary-300 border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${searchWatched ? 'fill-red-500' : ''}`} />
+              {searchWatched
+                ? (lang === 'pl' ? 'Obserwujesz' : 'Watching')
+                : (lang === 'pl' ? 'Obserwuj wyszukiwanie' : 'Watch search')
+              }
+            </button>
+          )}
+          {/* Saved searches pills */}
+          {savedSearches.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <Bell className="w-4 h-4 text-gray-400" />
+              {savedSearches.slice(0, 5).map(saved => (
+                <Link
+                  key={saved.id}
+                  to={`${saved.category ? `/kategoria/${saved.category}` : '/ogloszenia'}${
+                    saved.query || saved.city
+                      ? '?' + new URLSearchParams(
+                          Object.fromEntries(
+                            Object.entries({ search: saved.query || '', city: saved.city || '' }).filter(([, v]) => v)
+                          ) as Record<string, string>
+                        ).toString()
+                      : ''
+                  }`}
+                  className="text-xs px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-500 transition-colors"
+                >
+                  {[saved.query, saved.categoryName, saved.city].filter(Boolean).join(' • ') || (lang === 'pl' ? 'Wszystkie' : 'All')}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -425,9 +496,9 @@ export default function ListingsPage() {
           {/* Listings */}
           <div className="flex-1 min-w-0">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-xl font-bold">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div className="min-w-0 flex-shrink">
+                <h1 className="text-xl font-bold truncate">
                   {currentCategory
                     ? (lang === 'pl' ? currentCategory.namePl : currentCategory.nameEn)
                     : search
@@ -440,7 +511,7 @@ export default function ListingsPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {/* Mobile filter button */}
                 <button
                   onClick={() => setShowMobileFilters(true)}
@@ -477,7 +548,7 @@ export default function ListingsPage() {
                 </select>
 
                 {/* View mode toggle */}
-                <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0">
                   <button
                     onClick={() => setViewMode('list')}
                     className={`p-2 ${viewMode === 'list' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}

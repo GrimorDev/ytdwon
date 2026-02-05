@@ -61,7 +61,7 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
     const skip = (pageNum - 1) * limitNum;
 
     const where: Prisma.ListingWhereInput = {
-      status: 'ACTIVE',
+      status: { in: ['ACTIVE', 'SOLD', 'RESERVED'] },
     };
 
     if (userId) {
@@ -269,7 +269,7 @@ router.get('/my', authRequired, async (req: AuthRequest, res: Response, next) =>
     const { status } = req.query as Record<string, string>;
 
     const where: Prisma.ListingWhereInput = { userId: req.userId };
-    if (status && ['ACTIVE', 'SOLD', 'ARCHIVED'].includes(status)) {
+    if (status && ['ACTIVE', 'SOLD', 'RESERVED', 'ARCHIVED'].includes(status)) {
       where.status = status as any;
     }
 
@@ -549,7 +549,7 @@ router.patch('/:id/status', authRequired, async (req: AuthRequest, res: Response
   try {
     const id = req.params.id as string;
     const { status } = req.body;
-    if (!status || !['ACTIVE', 'SOLD', 'ARCHIVED'].includes(status)) {
+    if (!status || !['ACTIVE', 'SOLD', 'RESERVED', 'ARCHIVED'].includes(status)) {
       throw new AppError(400, 'Invalid status');
     }
 

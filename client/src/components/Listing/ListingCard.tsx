@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Clock, Eye, Check, Image } from 'lucide-react';
+import { Heart, MapPin, Clock, Eye, Check, Image, Ban } from 'lucide-react';
 import type { Listing } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { favoritesApi } from '../../services/api';
@@ -79,12 +79,22 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
   const imageUrl = listing.images?.[0]?.url || '';
   const imageCount = listing.images?.length || 0;
 
+  const isSold = listing.status === 'SOLD';
+  const isReserved = listing.status === 'RESERVED';
+  const isInactive = isSold || isReserved;
+
+  const statusBadge = isSold
+    ? { label: lang === 'pl' ? 'Sprzedane' : 'Sold', className: 'bg-red-600 text-white' }
+    : isReserved
+    ? { label: lang === 'pl' ? 'Zarezerwowane' : 'Reserved', className: 'bg-amber-500 text-white' }
+    : null;
+
   // LIST VIEW - horizontal layout like OLX
   if (viewMode === 'list') {
     return (
       <Link
         to={`/ogloszenia/${listing.id}`}
-        className="card-hover flex gap-4 p-0 overflow-hidden group"
+        className={`card-hover flex gap-4 p-0 overflow-hidden group ${isInactive ? 'opacity-80' : ''}`}
       >
         {/* Image */}
         <div className="relative w-[220px] h-[165px] flex-shrink-0 overflow-hidden bg-gray-200 dark:bg-gray-800">
@@ -92,7 +102,7 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
             <img
               src={imageUrl}
               alt={listing.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${isInactive ? 'grayscale-[30%]' : ''}`}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -109,10 +119,19 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
           )}
 
           {/* Promoted badge */}
-          {listing.promoted && (
+          {listing.promoted && !isInactive && (
             <span className="absolute top-2 left-2 badge-promoted">
               {t.listings.promoted}
             </span>
+          )}
+
+          {/* Sold/Reserved overlay */}
+          {statusBadge && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <span className={`px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider shadow-lg ${statusBadge.className}`}>
+                {statusBadge.label}
+              </span>
+            </div>
           )}
         </div>
 
@@ -151,11 +170,16 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
             </p>
           )}
 
-          {/* Bottom row: condition badge */}
+          {/* Bottom row: condition badge + status */}
           <div className="mt-auto flex items-center gap-2">
             <span className={`px-2 py-0.5 rounded text-xs font-medium ${conditionColor(listing.condition)}`}>
               {conditionLabel(listing.condition)}
             </span>
+            {statusBadge && (
+              <span className={`px-2 py-0.5 rounded text-xs font-bold ${statusBadge.className}`}>
+                {statusBadge.label}
+              </span>
+            )}
             {listing.user?.isVerified && (
               <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                 <Check className="w-3 h-3" />
@@ -169,7 +193,11 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
         <div className="flex flex-col items-end justify-between py-3 pr-4 flex-shrink-0 min-w-[140px]">
           {/* Price */}
           <div className="text-right">
-            {listing.isOnSale && listing.originalPrice ? (
+            {isSold ? (
+              <span className="text-xl font-bold text-gray-400 line-through">
+                {listing.price.toLocaleString('pl-PL')} {listing.currency}
+              </span>
+            ) : listing.isOnSale && listing.originalPrice ? (
               <>
                 <span className="text-sm text-gray-400 line-through block">
                   {listing.originalPrice.toLocaleString('pl-PL')} {listing.currency}
@@ -179,7 +207,7 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
                 </span>
               </>
             ) : (
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
+              <span className={`text-xl font-bold ${isReserved ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>
                 {listing.price.toLocaleString('pl-PL')} {listing.currency}
               </span>
             )}
@@ -205,10 +233,10 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
 
   // GRID VIEW - original card layout
   return (
-    <Link to={`/ogloszenia/${listing.id}`} className="card-hover overflow-hidden group block">
+    <Link to={`/ogloszenia/${listing.id}`} className={`card-hover overflow-hidden group block ${isInactive ? 'opacity-80' : ''}`}>
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-200 dark:bg-gray-800">
         {imageUrl ? (
-          <img src={imageUrl} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          <img src={imageUrl} alt={listing.title} className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${isInactive ? 'grayscale-[30%]' : ''}`} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
             <PackageIcon className="w-12 h-12" />
@@ -216,10 +244,10 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
         )}
         {/* Badges */}
         <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
-          {listing.promoted && (
+          {listing.promoted && !isInactive && (
             <span className="badge-promoted">{t.listings.promoted}</span>
           )}
-          {listing.isOnSale && listing.originalPrice && (
+          {listing.isOnSale && listing.originalPrice && !isInactive && (
             <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
               -{Math.round((1 - listing.price / listing.originalPrice) * 100)}%
             </span>
@@ -237,13 +265,26 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
             {imageCount}
           </span>
         )}
+        {/* Sold/Reserved overlay */}
+        {statusBadge && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <span className={`px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider shadow-lg ${statusBadge.className}`}>
+              {statusBadge.label}
+            </span>
+          </div>
+        )}
       </div>
       <div className="p-3">
-        {/* Condition badge */}
+        {/* Condition badge + status */}
         <div className="flex items-center gap-2 mb-1.5">
           <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${conditionColor(listing.condition)}`}>
             {conditionLabel(listing.condition)}
           </span>
+          {statusBadge && (
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${statusBadge.className}`}>
+              {statusBadge.label}
+            </span>
+          )}
           {listing.category && (
             <span className="text-[10px] text-gray-500 truncate">
               {lang === 'pl' ? listing.category.namePl : listing.category.nameEn}
@@ -264,7 +305,11 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
           </div>
         )}
 
-        {listing.isOnSale && listing.originalPrice ? (
+        {isSold ? (
+          <p className="text-lg font-bold text-gray-400 line-through">
+            {listing.price.toLocaleString('pl-PL')} {listing.currency}
+          </p>
+        ) : listing.isOnSale && listing.originalPrice ? (
           <div>
             <span className="text-sm text-gray-400 line-through mr-2">
               {listing.originalPrice.toLocaleString('pl-PL')} {listing.currency}
@@ -274,7 +319,7 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
             </span>
           </div>
         ) : (
-          <p className="text-lg font-bold text-primary-500">
+          <p className={`text-lg font-bold ${isReserved ? 'text-amber-600 dark:text-amber-400' : 'text-primary-500'}`}>
             {listing.price.toLocaleString('pl-PL')} {listing.currency}
           </p>
         )}
