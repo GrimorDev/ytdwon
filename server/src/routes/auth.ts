@@ -40,7 +40,7 @@ router.post('/register', async (req: Request, res: Response, next) => {
     const tokens = generateTokens(user.id);
 
     res.status(201).json({
-      user: { id: user.id, email: user.email, name: user.name, plan: user.plan },
+      user: { id: user.id, email: user.email, name: user.name, plan: user.plan, role: user.role },
       ...tokens,
     });
   } catch (err) {
@@ -62,6 +62,10 @@ router.post('/login', async (req: Request, res: Response, next) => {
       throw new AppError(401, 'Invalid email or password');
     }
 
+    if (user.blocked) {
+      throw new AppError(403, 'Account blocked');
+    }
+
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       throw new AppError(401, 'Invalid email or password');
@@ -70,7 +74,7 @@ router.post('/login', async (req: Request, res: Response, next) => {
     const tokens = generateTokens(user.id);
 
     res.json({
-      user: { id: user.id, email: user.email, name: user.name, plan: user.plan },
+      user: { id: user.id, email: user.email, name: user.name, plan: user.plan, role: user.role },
       ...tokens,
     });
   } catch (err) {
@@ -86,7 +90,7 @@ router.get('/me', authRequired, async (req: AuthRequest, res: Response, next) =>
       select: {
         id: true, email: true, name: true, phone: true,
         avatarUrl: true, bio: true, city: true,
-        plan: true, createdAt: true,
+        plan: true, role: true, createdAt: true,
       },
     });
 

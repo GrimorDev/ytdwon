@@ -13,6 +13,8 @@ import { reviewsRouter } from './routes/reviews';
 import { usersRouter } from './routes/users';
 import { uploadRouter } from './routes/upload';
 import { stripeRouter } from './routes/stripe';
+import { reportsRouter } from './routes/reports';
+import { adminRouter } from './routes/admin';
 import { errorHandler } from './middleware/errorHandler';
 import { setupWebSocket } from './websocket';
 import { startCronJobs } from './services/cronService';
@@ -55,6 +57,8 @@ app.use('/api/reviews', reviewsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/stripe', stripeRouter);
+app.use('/api/reports', reportsRouter);
+app.use('/api/admin', adminRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

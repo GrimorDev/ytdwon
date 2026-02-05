@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag, Copy, Check, ExternalLink, Ban, Maximize2 } from 'lucide-react';
-import { listingsApi, favoritesApi, chatApi } from '../services/api';
+import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag, Copy, Check, ExternalLink, Ban, Maximize2, Flag, X, ArrowLeft, Send, CheckCircle } from 'lucide-react';
+import { listingsApi, favoritesApi, chatApi, reportsApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
-import type { Listing } from '../types';
+import type { Listing, ReportCategory } from '../types';
 import AttributeDisplay from '../components/Listing/AttributeDisplay';
 import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrumbs';
 import ListingCard from '../components/Listing/ListingCard';
@@ -24,10 +24,22 @@ export default function ListingDetailPage() {
   const [showPhone, setShowPhone] = useState(false);
   const [lightbox, setLightbox] = useState(false);
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
+  const [sellerListings, setSellerListings] = useState<Listing[]>([]);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [copied, setCopied] = useState(false);
   const [locationCopied, setLocationCopied] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
+
+  // Report modal state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportStep, setReportStep] = useState<'category' | 'subcategory' | 'explanation' | 'success'>(
+    'category'
+  );
+  const [reportCategory, setReportCategory] = useState<ReportCategory | null>(null);
+  const [reportSubcategory, setReportSubcategory] = useState('');
+  const [reportExplanation, setReportExplanation] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -49,9 +61,19 @@ export default function ListingDetailPage() {
         if (data.listing.category?.slug) {
           listingsApi.getAll({
             category: data.listing.category.slug,
-            limit: 4,
+            limit: 8,
           }).then(({ data: simData }) => {
-            setSimilarListings(simData.listings.filter(l => l.id !== id).slice(0, 4));
+            setSimilarListings(simData.listings.filter(l => l.id !== id && l.status === 'ACTIVE').slice(0, 4));
+          }).catch(() => {});
+        }
+
+        // Fetch seller's other listings
+        if (data.listing.userId) {
+          listingsApi.getAll({
+            userId: data.listing.userId,
+            limit: 8,
+          }).then(({ data: sellerData }) => {
+            setSellerListings(sellerData.listings.filter(l => l.id !== id && l.status === 'ACTIVE').slice(0, 4));
           }).catch(() => {});
         }
       })
@@ -139,6 +161,74 @@ export default function ListingDetailPage() {
       case 'USED': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
       case 'DAMAGED': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
       default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  // Report categories and subcategories
+  const reportCategories: { key: ReportCategory; label: string; icon: string }[] = [
+    { key: 'FRAUD', label: t.report.categoryFraud, icon: '🚨' },
+    { key: 'ABUSE', label: t.report.categoryAbuse, icon: '⚠️' },
+    { key: 'ITEM_PROBLEM', label: t.report.categoryItemProblem, icon: '📦' },
+    { key: 'INCORRECT_SELLER_DATA', label: t.report.categoryIncorrectSellerData, icon: '👤' },
+    { key: 'MISLEADING_LISTING', label: t.report.categoryMisleadingListing, icon: '🔍' },
+  ];
+
+  const reportSubcategories: Record<ReportCategory, { key: string; label: string }[]> = {
+    FRAUD: [
+      { key: 'fake_listing', label: t.report.subFakeListing },
+      { key: 'scam', label: t.report.subScam },
+      { key: 'stolen_goods', label: t.report.subStolenGoods },
+    ],
+    ABUSE: [
+      { key: 'spam', label: t.report.subSpam },
+      { key: 'harassment', label: t.report.subHarassment },
+      { key: 'hate_speech', label: t.report.subHateSpeech },
+    ],
+    ITEM_PROBLEM: [
+      { key: 'bad_description', label: t.report.subBadDescription },
+      { key: 'wrong_photos', label: t.report.subWrongPhotos },
+      { key: 'defective_item', label: t.report.subDefectiveItem },
+    ],
+    INCORRECT_SELLER_DATA: [
+      { key: 'fake_name', label: t.report.subFakeName },
+      { key: 'wrong_location', label: t.report.subWrongLocation },
+      { key: 'wrong_phone', label: t.report.subWrongPhone },
+    ],
+    MISLEADING_LISTING: [
+      { key: 'wrong_price', label: t.report.subWrongPrice },
+      { key: 'duplicate_listing', label: t.report.subDuplicateListing },
+      { key: 'wrong_category', label: t.report.subWrongCategory },
+    ],
+  };
+
+  const openReportModal = () => {
+    setReportStep('category');
+    setReportCategory(null);
+    setReportSubcategory('');
+    setReportExplanation('');
+    setReportError('');
+    setShowReportModal(true);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!listing || !reportCategory || !reportSubcategory || reportExplanation.length < 10) return;
+    setReportSubmitting(true);
+    setReportError('');
+    try {
+      await reportsApi.create({
+        listingId: listing.id,
+        category: reportCategory,
+        subcategory: reportSubcategory,
+        explanation: reportExplanation,
+      });
+      setReportStep('success');
+      setTimeout(() => {
+        setShowReportModal(false);
+      }, 3000);
+    } catch {
+      setReportError(t.report.error);
+    } finally {
+      setReportSubmitting(false);
     }
   };
 
@@ -430,6 +520,17 @@ export default function ListingDetailPage() {
                     </button>
                   )}
 
+                  {/* Report button */}
+                  {user && user.id !== listing.userId && (
+                    <button
+                      onClick={openReportModal}
+                      className="py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-medium transition-all text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 border border-gray-200 dark:border-gray-700"
+                      title={t.detail.reportListing}
+                    >
+                      <Flag className="w-4 h-4" />
+                    </button>
+                  )}
+
                   {/* Share button */}
                   <div className="relative" ref={shareMenuRef}>
                     <button
@@ -672,19 +773,44 @@ export default function ListingDetailPage() {
           </div>
         </div>
 
-        {/* Similar listings */}
+        {/* Seller's other listings */}
+        {sellerListings.length > 0 && (
+          <div className="mt-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">
+                {t.detail.otherSellerListings}
+              </h2>
+              {listing.user && (
+                <Link
+                  to={`/uzytkownik/${listing.user.id}`}
+                  className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
+                >
+                  {lang === 'pl' ? 'Zobacz profil' : 'View profile'}
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {sellerListings.map(sl => (
+                <ListingCard key={sl.id} listing={sl} viewMode="grid" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* See also (similar from category) */}
         {similarListings.length > 0 && (
           <div className="mt-12">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">
-                {lang === 'pl' ? 'Podobne ogłoszenia' : 'Similar listings'}
+                {t.detail.seeAlso}
               </h2>
               {listing.category && (
                 <Link
                   to={`/kategoria/${listing.category.slug}`}
                   className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
                 >
-                  {lang === 'pl' ? 'Zobacz więcej' : 'See more'}
+                  {lang === 'pl' ? 'Zobacz wiecej' : 'See more'}
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               )}
@@ -697,6 +823,143 @@ export default function ListingDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setShowReportModal(false)}>
+          <div className="bg-white dark:bg-dark-600 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                {reportStep !== 'category' && reportStep !== 'success' && (
+                  <button
+                    onClick={() => {
+                      if (reportStep === 'subcategory') setReportStep('category');
+                      if (reportStep === 'explanation') setReportStep('subcategory');
+                    }}
+                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-500 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                )}
+                <h3 className="text-lg font-bold">
+                  <Flag className="w-5 h-5 inline mr-2 text-red-500" />
+                  {t.report.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowReportModal(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-500 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Step indicators */}
+            {reportStep !== 'success' && (
+              <div className="flex gap-1 px-5 pt-4">
+                <div className={`h-1 flex-1 rounded-full ${reportStep === 'category' || reportStep === 'subcategory' || reportStep === 'explanation' ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                <div className={`h-1 flex-1 rounded-full ${reportStep === 'subcategory' || reportStep === 'explanation' ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                <div className={`h-1 flex-1 rounded-full ${reportStep === 'explanation' ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
+              </div>
+            )}
+
+            <div className="p-5">
+              {/* Step 1: Select category */}
+              {reportStep === 'category' && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-4">{t.report.selectCategory}</p>
+                  <div className="space-y-2">
+                    {reportCategories.map(cat => (
+                      <button
+                        key={cat.key}
+                        onClick={() => {
+                          setReportCategory(cat.key);
+                          setReportStep('subcategory');
+                        }}
+                        className="w-full p-3.5 text-left rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all flex items-center gap-3"
+                      >
+                        <span className="text-xl">{cat.icon}</span>
+                        <span className="font-medium">{cat.label}</span>
+                        <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Select subcategory */}
+              {reportStep === 'subcategory' && reportCategory && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-4">{t.report.selectSubcategory}</p>
+                  <div className="space-y-2">
+                    {reportSubcategories[reportCategory].map(sub => (
+                      <button
+                        key={sub.key}
+                        onClick={() => {
+                          setReportSubcategory(sub.key);
+                          setReportStep('explanation');
+                        }}
+                        className="w-full p-3.5 text-left rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all flex items-center gap-3"
+                      >
+                        <span className="font-medium">{sub.label}</span>
+                        <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Explanation */}
+              {reportStep === 'explanation' && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-4">{t.report.explanation}</p>
+                  <textarea
+                    value={reportExplanation}
+                    onChange={e => setReportExplanation(e.target.value)}
+                    placeholder={t.report.explanationPlaceholder}
+                    className="input-field !py-3 min-h-[120px] resize-none text-sm w-full"
+                    rows={5}
+                  />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className={`text-xs ${reportExplanation.length >= 10 ? 'text-green-500' : 'text-gray-400'}`}>
+                      {reportExplanation.length}/1000
+                    </span>
+                  </div>
+                  {reportError && (
+                    <p className="text-sm text-red-500 mt-2">{reportError}</p>
+                  )}
+                  <button
+                    onClick={handleSubmitReport}
+                    disabled={reportExplanation.length < 10 || reportSubmitting}
+                    className="w-full mt-4 btn-primary !py-3 flex items-center justify-center gap-2 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {reportSubmitting ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        {t.report.submit}
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Success */}
+              {reportStep === 'success' && (
+                <div className="text-center py-6">
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <h4 className="text-lg font-bold mb-2">{t.report.success}</h4>
+                  <p className="text-sm text-gray-500">
+                    {lang === 'pl' ? 'Twoje zgloszenie zostalo przyjete i zostanie rozpatrzone przez administracje.' : 'Your report has been received and will be reviewed by our team.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightbox && images.length > 0 && (

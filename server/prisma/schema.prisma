@@ -12,6 +12,11 @@ enum Plan {
   PREMIUM
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 enum Condition {
   NEW
   USED
@@ -23,6 +28,21 @@ enum ListingStatus {
   SOLD
   RESERVED
   ARCHIVED
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportCategory {
+  FRAUD
+  ABUSE
+  ITEM_PROBLEM
+  INCORRECT_SELLER_DATA
+  MISLEADING_LISTING
 }
 
 model User {
@@ -37,6 +57,9 @@ model User {
   latitude         Float?
   longitude        Float?
   plan             Plan           @default(FREE)
+  role             Role           @default(USER)
+  blocked          Boolean        @default(false)
+  blockedReason    String?
   stripeCustomerId String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -47,6 +70,7 @@ model User {
   sentMessages     Message[]      @relation("sender")
   conversations1   Conversation[] @relation("participant1")
   conversations2   Conversation[] @relation("participant2")
+  reports          Report[]       @relation("reporter")
 }
 
 model Category {
@@ -89,6 +113,7 @@ model Listing {
   favorites       Favorite[]
   conversations   Conversation[]
   priceHistory    PriceHistory[]
+  reports         Report[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -168,4 +193,25 @@ model Review {
   createdAt  DateTime @default(now())
 
   @@unique([reviewerId, reviewedId])
+}
+
+model Report {
+  id             String         @id @default(uuid())
+  category       ReportCategory
+  subcategory    String
+  explanation    String
+  status         ReportStatus   @default(PENDING)
+  adminNote      String?
+  reporterId     String
+  reporter       User           @relation("reporter", fields: [reporterId], references: [id])
+  listingId      String?
+  listing        Listing?       @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  reportedUserId String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status])
+  @@index([listingId])
+  @@index([reporterId])
+  @@index([createdAt(sort: Desc)])
 }

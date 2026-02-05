@@ -7,6 +7,8 @@ export interface User {
   bio?: string;
   city?: string;
   plan: 'FREE' | 'PREMIUM';
+  role?: 'USER' | 'ADMIN';
+  blocked?: boolean;
   createdAt?: string;
 }
 
@@ -154,4 +156,63 @@ export interface UserStats {
     avgRating: number;
     reviewsCount: number;
   };
+}
+
+export type ReportCategory = 'FRAUD' | 'ABUSE' | 'ITEM_PROBLEM' | 'INCORRECT_SELLER_DATA' | 'MISLEADING_LISTING';
+export type ReportStatus = 'PENDING' | 'REVIEWED' | 'RESOLVED' | 'DISMISSED';
+
+export interface Report {
+  id: string;
+  category: ReportCategory;
+  subcategory: string;
+  explanation: string;
+  status: ReportStatus;
+  adminNote?: string;
+  reporterId: string;
+  listingId?: string;
+  reportedUserId?: string;
+  reporter?: { id: string; name: string; email: string };
+  listing?: {
+    id: string;
+    title: string;
+    price: number;
+    status: string;
+    images?: ListingImage[];
+    user?: { id: string; name: string; email: string };
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalListings: number;
+  totalActiveListings: number;
+  pendingReports: number;
+  totalReports: number;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  city?: string;
+  avatarUrl?: string;
+  role: 'USER' | 'ADMIN';
+  plan: 'FREE' | 'PREMIUM';
+  blocked: boolean;
+  blockedReason?: string;
+  createdAt: string;
+  _count?: { listings: number; reports: number };
+}
+
+export interface AdminConversation {
+  id: string;
+  participant1: { id: string; name: string; avatarUrl?: string };
+  participant2: { id: string; name: string; avatarUrl?: string };
+  listing?: { id: string; title: string };
+  messages: Message[];
+  _count?: { messages: number };
+  updatedAt: string;
 }
