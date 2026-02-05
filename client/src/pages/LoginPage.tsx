@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
+import Logo from '../components/Layout/Logo';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -37,8 +38,8 @@ export default function LoginPage() {
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-2xl font-bold text-indigo-500">
-            Vipile
+          <Link to="/" className="inline-block">
+            <Logo size="md" />
           </Link>
           <h1 className="text-2xl font-bold mt-6">{t.auth.loginTitle}</h1>
           <p className="text-gray-500 mt-2">{t.auth.loginSubtitle}</p>
@@ -108,7 +109,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center text-sm text-gray-500">
             {t.auth.noAccount}{' '}
-            <Link to="/rejestracja" className="text-indigo-500 hover:text-indigo-400 font-medium">
+            <Link to="/rejestracja" className="text-primary-500 hover:text-primary-400 font-medium">
               {t.auth.registerLink}
             </Link>
           </div>

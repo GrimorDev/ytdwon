@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, UserPlus, Eye, EyeOff, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
+import Logo from '../components/Layout/Logo';
 
 export default function RegisterPage() {
   const { t } = useTranslation();
@@ -61,8 +62,8 @@ export default function RegisterPage() {
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-2xl font-bold text-indigo-500">
-            Vipile
+          <Link to="/" className="inline-block">
+            <Logo size="md" />
           </Link>
           <h1 className="text-2xl font-bold mt-6">{t.auth.registerTitle}</h1>
           <p className="text-gray-500 mt-2">{t.auth.registerSubtitle}</p>
@@ -170,13 +171,13 @@ export default function RegisterPage() {
                 type="checkbox"
                 checked={acceptTerms}
                 onChange={e => setAcceptTerms(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="mt-1 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
               <span className="text-sm text-gray-500">
                 {t.auth.acceptTerms}{' '}
-                <a href="#" className="text-indigo-500 hover:underline">{t.auth.termsLink}</a>{' '}
+                <a href="#" className="text-primary-500 hover:underline">{t.auth.termsLink}</a>{' '}
                 {t.auth.and}{' '}
-                <a href="#" className="text-indigo-500 hover:underline">{t.auth.privacyLink}</a>
+                <a href="#" className="text-primary-500 hover:underline">{t.auth.privacyLink}</a>
               </span>
             </label>
 
@@ -198,7 +199,7 @@ export default function RegisterPage() {
 
           <div className="mt-6 text-center text-sm text-gray-500">
             {t.auth.hasAccount}{' '}
-            <Link to="/logowanie" className="text-indigo-500 hover:text-indigo-400 font-medium">
+            <Link to="/logowanie" className="text-primary-500 hover:text-primary-400 font-medium">
               {t.auth.loginLink}
             </Link>
           </div>

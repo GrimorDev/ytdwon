@@ -75,14 +75,14 @@ export default function AccountPage() {
           <h2 className="font-semibold mb-4">{t.account.photo}</h2>
           <div className="flex items-center gap-6">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center overflow-hidden">
+              <div className="w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center overflow-hidden">
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <User className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+                  <User className="w-10 h-10 text-primary-600 dark:text-primary-400" />
                 )}
               </div>
-              <label className="absolute bottom-0 right-0 p-2 bg-indigo-600 rounded-full cursor-pointer hover:bg-indigo-700 transition-colors">
+              <label className="absolute bottom-0 right-0 p-2 bg-primary-600 rounded-full cursor-pointer hover:bg-primary-700 transition-colors">
                 <Camera className="w-4 h-4 text-white" />
                 <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
               </label>

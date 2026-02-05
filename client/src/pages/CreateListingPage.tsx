@@ -115,7 +115,7 @@ export default function CreateListingPage() {
               </div>
             ))}
             {images.length < 8 && (
-              <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 transition-colors">
+              <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center cursor-pointer hover:border-primary-500 transition-colors">
                 <Plus className="w-8 h-8 text-gray-400" />
                 <span className="text-xs text-gray-400 mt-1">{t.create.addPhoto}</span>
                 <input type="file" accept="image/*" multiple onChange={handleImageAdd} className="hidden" />

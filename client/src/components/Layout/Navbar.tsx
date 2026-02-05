@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Plus, User, Sun, Moon, Menu, X, LogOut, Package, Settings, Globe } from 'lucide-react';
+import { Heart, MessageCircle, Plus, Sun, Moon, Menu, X, LogOut, Package, Settings, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from '../../i18n';
 import { chatApi } from '../../services/api';
 import SearchAutocomplete from '../Search/SearchAutocomplete';
+import Logo from './Logo';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -31,13 +32,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">V</span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent hidden sm:block">
-              Vipile
-            </span>
+          <Link to="/" className="shrink-0">
+            <Logo size="md" showText={true} />
           </Link>
 
           {/* Search */}
@@ -46,13 +42,13 @@ export default function Navbar() {
           {/* Desktop actions */}
           <div className="flex items-center gap-2">
             {/* Language toggle */}
-            <button onClick={() => setLang(lang === 'pl' ? 'en' : 'pl')} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={lang === 'pl' ? 'English' : 'Polski'}>
+            <button onClick={() => setLang(lang === 'pl' ? 'en' : 'pl')} className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors" title={lang === 'pl' ? 'English' : 'Polski'}>
               <Globe className="w-5 h-5" />
             </button>
 
             {/* Theme toggle */}
-            <button onClick={toggle} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            <button onClick={toggle} className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors">
+              {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-primary-600" />}
             </button>
 
             {user ? (
@@ -64,12 +60,12 @@ export default function Navbar() {
                 </Link>
 
                 {/* Favorites */}
-                <Link to="/ulubione" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors hidden sm:block">
+                <Link to="/ulubione" className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors hidden sm:block">
                   <Heart className="w-5 h-5" />
                 </Link>
 
                 {/* Messages */}
-                <Link to="/wiadomosci" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative hidden sm:block">
+                <Link to="/wiadomosci" className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors relative hidden sm:block">
                   <MessageCircle className="w-5 h-5" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -80,11 +76,11 @@ export default function Navbar() {
 
                 {/* User menu */}
                 <div className="relative">
-                  <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors">
                     {user.avatarUrl ? (
-                      <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+                      <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover ring-2 ring-primary-400/30" />
                     ) : (
-                      <div className="w-7 h-7 bg-indigo-600 rounded-full flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #635985, #443C68)' }}>
                         <span className="text-white text-xs font-bold">{user.name[0].toUpperCase()}</span>
                       </div>
                     )}
@@ -94,25 +90,25 @@ export default function Navbar() {
                     <>
                       <div className="fixed inset-0" onClick={() => setUserMenuOpen(false)} />
                       <div className="absolute right-0 mt-2 w-56 card !p-2 shadow-xl z-50">
-                        <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 mb-1">
+                        <div className="px-3 py-2 border-b border-gray-200 dark:border-dark-500 mb-1">
                           <p className="font-semibold text-sm">{user.name}</p>
                           <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
-                        <Link to="/moje-ogloszenia" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Link to="/moje-ogloszenia" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
                           <Package className="w-4 h-4" /> {t.nav.myListings}
                         </Link>
-                        <Link to="/ulubione" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Link to="/ulubione" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
                           <Heart className="w-4 h-4" /> {t.nav.favorites}
                         </Link>
-                        <Link to="/wiadomosci" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Link to="/wiadomosci" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
                           <MessageCircle className="w-4 h-4" /> {t.nav.messages}
                           {unreadCount > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
                         </Link>
-                        <Link to="/konto" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Link to="/konto" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
                           <Settings className="w-4 h-4" /> {t.nav.account}
                         </Link>
-                        <hr className="my-1 border-gray-200 dark:border-gray-700" />
-                        <button onClick={() => { logout(); setUserMenuOpen(false); navigate('/'); }} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 w-full text-red-500">
+                        <hr className="my-1 border-gray-200 dark:border-dark-500" />
+                        <button onClick={() => { logout(); setUserMenuOpen(false); navigate('/'); }} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-red-500">
                           <LogOut className="w-4 h-4" /> {t.nav.logout}
                         </button>
                       </div>

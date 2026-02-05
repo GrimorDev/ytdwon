@@ -178,10 +178,10 @@ export default function ListingsPage() {
           <button onClick={() => setShowFilters(!showFilters)} className="btn-secondary !py-2 !px-3 flex items-center gap-1.5 text-sm">
             <SlidersHorizontal className="w-4 h-4" /> {t.listings.filters}
           </button>
-          <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
+          <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
             <Grid3X3 className="w-5 h-5" />
           </button>
-          <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
+          <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
             <List className="w-5 h-5" />
           </button>
         </div>
@@ -200,11 +200,11 @@ export default function ListingsPage() {
                 to={`/kategoria/${sub.slug}`}
                 className="card-hover p-6 flex items-center gap-4 group"
               >
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:from-indigo-100 group-hover:to-purple-100 dark:group-hover:from-indigo-900/50 dark:group-hover:to-purple-900/50 transition-colors">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:from-primary-100 group-hover:to-primary-200 dark:group-hover:from-primary-900/50 dark:group-hover:to-primary-800/50 transition-colors">
                   {getCategoryIcon(sub.icon)}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h3 className="font-semibold text-lg group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                     {lang === 'pl' ? sub.namePl : sub.nameEn}
                   </h3>
                   {sub._count?.listings !== undefined && (
@@ -213,7 +213,7 @@ export default function ListingsPage() {
                     </p>
                   )}
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
               </Link>
             ))}
           </div>
@@ -328,7 +328,7 @@ export default function ListingsPage() {
                 setSearchParams(params);
               }}
               className={`w-10 h-10 rounded-lg font-medium text-sm transition-colors ${
-                p === page ? 'bg-indigo-600 text-white' : 'btn-secondary'
+                p === page ? 'bg-primary-600 text-white' : 'btn-secondary'
               }`}
             >
               {p}

@@ -83,7 +83,7 @@ export default function UserProfilePage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
       </div>
     );
   }
@@ -102,11 +102,11 @@ export default function UserProfilePage() {
       {/* Profile Header */}
       <div className="card mb-6">
         <div className="flex flex-col sm:flex-row gap-6">
-          <div className="w-24 h-24 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
+          <div className="w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
             {profile.avatarUrl ? (
               <img src={profile.avatarUrl} alt="" className="w-24 h-24 rounded-full object-cover" />
             ) : (
-              <span className="text-3xl text-indigo-600 dark:text-indigo-400 font-bold">
+              <span className="text-3xl text-primary-600 dark:text-primary-400 font-bold">
                 {profile.name.charAt(0).toUpperCase()}
               </span>
             )}
@@ -158,7 +158,7 @@ export default function UserProfilePage() {
           onClick={() => setActiveTab('listings')}
           className={`px-4 py-2 font-medium transition-colors border-b-2 -mb-px ${
             activeTab === 'listings'
-              ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
           }`}
         >
@@ -168,7 +168,7 @@ export default function UserProfilePage() {
           onClick={() => setActiveTab('reviews')}
           className={`px-4 py-2 font-medium transition-colors border-b-2 -mb-px ${
             activeTab === 'reviews'
-              ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
           }`}
         >
@@ -247,18 +247,18 @@ export default function UserProfilePage() {
             reviews.map(review => (
               <div key={review.id} className="card">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
                     {review.reviewer.avatarUrl ? (
                       <img src={review.reviewer.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
                     ) : (
-                      <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                      <span className="text-primary-600 dark:text-primary-400 font-semibold">
                         {review.reviewer.name.charAt(0).toUpperCase()}
                       </span>
                     )}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <Link to={`/uzytkownik/${review.reviewerId}`} className="font-medium hover:text-indigo-500">
+                      <Link to={`/uzytkownik/${review.reviewerId}`} className="font-medium hover:text-primary-500">
                         {review.reviewer.name}
                       </Link>
                       <span className="text-sm text-gray-500">

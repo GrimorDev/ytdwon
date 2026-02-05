@@ -21,7 +21,7 @@ export default function SearchAutocomplete({ size = 'default', initialValue = ''
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced search
   const fetchSuggestions = useCallback(async (q: string) => {
@@ -109,8 +109,8 @@ export default function SearchAutocomplete({ size = 'default', initialValue = ''
   };
 
   const inputClasses = size === 'lg'
-    ? 'w-full pl-12 pr-4 py-4 text-lg rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent'
-    : 'w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent';
+    ? 'w-full pl-12 pr-4 py-4 text-lg rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent'
+    : 'w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent';
 
   const iconClasses = size === 'lg'
     ? 'absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400'
@@ -133,7 +133,7 @@ export default function SearchAutocomplete({ size = 'default', initialValue = ''
           />
           {loading && (
             <div className={`absolute right-3 top-1/2 -translate-y-1/2`}>
-              <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
         </div>
@@ -167,7 +167,7 @@ export default function SearchAutocomplete({ size = 'default', initialValue = ''
                   {suggestion.title}
                 </p>
                 <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-primary-600 dark:text-primary-400">
                     {suggestion.price.toLocaleString('pl-PL')} {suggestion.currency}
                   </span>
                   <span className="flex items-center gap-0.5">

@@ -203,7 +203,7 @@ export default function ListingDetailPage() {
                     onClick={() => setCurrentImage(i)}
                     className={`shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
                       i === currentImage
-                        ? 'border-indigo-500 ring-2 ring-indigo-500/20'
+                        ? 'border-primary-500 ring-2 ring-primary-500/20'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >
@@ -227,7 +227,7 @@ export default function ListingDetailPage() {
             <div className="mt-8 hidden lg:block">
               <div className="card !p-6">
                 <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-indigo-500" />
+                  <Package className="w-5 h-5 text-primary-500" />
                   {t.detail.description}
                 </h2>
                 <p className="whitespace-pre-wrap leading-relaxed text-gray-700 dark:text-gray-300">
@@ -250,7 +250,7 @@ export default function ListingDetailPage() {
                   {listing.category && (
                     <Link
                       to={`/kategoria/${listing.category.slug}`}
-                      className="text-xs text-gray-500 hover:text-indigo-500 transition-colors"
+                      className="text-xs text-gray-500 hover:text-primary-500 transition-colors"
                     >
                       {lang === 'pl' ? listing.category.namePl : listing.category.nameEn}
                     </Link>
@@ -283,7 +283,7 @@ export default function ListingDetailPage() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                    <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
                       {listing.price.toLocaleString('pl-PL')} {listing.currency}
                     </p>
                   )}
@@ -331,12 +331,12 @@ export default function ListingDetailPage() {
                     {listing.user.avatarUrl ? (
                       <img src={listing.user.avatarUrl} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-700" />
                     ) : (
-                      <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center ring-2 ring-gray-100 dark:ring-gray-700">
+                      <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center ring-2 ring-gray-100 dark:ring-gray-700">
                         <span className="text-white font-bold text-lg">{listing.user.name[0].toUpperCase()}</span>
                       </div>
                     )}
                     <div className="flex-1">
-                      <p className="font-semibold group-hover:text-indigo-500 transition-colors">{listing.user.name}</p>
+                      <p className="font-semibold group-hover:text-primary-500 transition-colors">{listing.user.name}</p>
                       {listing.user.city && (
                         <p className="text-sm text-gray-500 flex items-center gap-1">
                           <MapPin className="w-3 h-3" /> {listing.user.city}
@@ -352,7 +352,7 @@ export default function ListingDetailPage() {
                         </div>
                       ) : null}
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
                   </Link>
 
                   {/* Phone button */}
@@ -440,7 +440,7 @@ export default function ListingDetailPage() {
           {/* Description - mobile */}
           <div className="card !p-6">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Package className="w-5 h-5 text-indigo-500" />
+              <Package className="w-5 h-5 text-primary-500" />
               {t.detail.description}
             </h2>
             <p className="whitespace-pre-wrap leading-relaxed text-gray-700 dark:text-gray-300">

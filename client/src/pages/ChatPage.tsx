@@ -132,7 +132,7 @@ export default function ChatPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
       </div>
     );
   }
@@ -165,15 +165,15 @@ export default function ChatPage() {
                     key={conv.id}
                     to={`/wiadomosci/${conv.id}`}
                     className={`block p-4 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                      isActive ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                      isActive ? 'bg-primary-50 dark:bg-primary-900/20' : ''
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
                         {other.avatarUrl ? (
                           <img src={other.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
                         ) : (
-                          <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                          <span className="text-primary-600 dark:text-primary-400 font-semibold">
                             {other.name.charAt(0).toUpperCase()}
                           </span>
                         )}
@@ -182,7 +182,7 @@ export default function ChatPage() {
                         <div className="flex items-center justify-between">
                           <span className="font-medium truncate">{other.name}</span>
                           {hasUnread && (
-                            <span className="w-5 h-5 bg-indigo-500 rounded-full text-white text-xs flex items-center justify-center flex-shrink-0">
+                            <span className="w-5 h-5 bg-primary-500 rounded-full text-white text-xs flex items-center justify-center flex-shrink-0">
                               {conv.unreadCount}
                             </span>
                           )}
@@ -211,20 +211,20 @@ export default function ChatPage() {
                 <Link to="/wiadomosci" className="md:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                   <ArrowLeft className="w-5 h-5" />
                 </Link>
-                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
                   {activeConversation.otherUser.avatarUrl ? (
                     <img src={activeConversation.otherUser.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
                   ) : (
-                    <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                    <span className="text-primary-600 dark:text-primary-400 font-semibold">
                       {activeConversation.otherUser.name.charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
                 <div className="flex-1">
-                  <Link to={`/uzytkownik/${activeConversation.otherUser.id}`} className="font-medium hover:text-indigo-500">
+                  <Link to={`/uzytkownik/${activeConversation.otherUser.id}`} className="font-medium hover:text-primary-500">
                     {activeConversation.otherUser.name}
                   </Link>
-                  <Link to={`/ogloszenia/${activeConversation.listing.id}`} className="text-sm text-gray-500 block hover:text-indigo-500">
+                  <Link to={`/ogloszenia/${activeConversation.listing.id}`} className="text-sm text-gray-500 block hover:text-primary-500">
                     {activeConversation.listing.title}
                   </Link>
                 </div>
@@ -241,11 +241,11 @@ export default function ChatPage() {
                     <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${
                         isMine
-                          ? 'bg-indigo-600 text-white rounded-br-md'
+                          ? 'bg-primary-600 text-white rounded-br-md'
                           : 'bg-gray-100 dark:bg-gray-700 rounded-bl-md'
                       }`}>
                         <p>{msg.content}</p>
-                        <p className={`text-xs mt-1 ${isMine ? 'text-indigo-200' : 'text-gray-500'}`}>
+                        <p className={`text-xs mt-1 ${isMine ? 'text-primary-200' : 'text-gray-500'}`}>
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>

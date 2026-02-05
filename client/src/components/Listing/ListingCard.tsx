@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { favoritesApi } from '../../services/api';
 import { useState } from 'react';
 import { useTranslation } from '../../i18n';
-import { getCardAttributes, resolveSelectLabel, formatAttributeValue } from '../../config/categoryAttributes';
+import { getCardAttributes, formatAttributeValue } from '../../config/categoryAttributes';
 
 interface Props {
   listing: Listing;
@@ -25,11 +25,8 @@ export default function ListingCard({ listing, onFavoriteChange }: Props) {
     for (const attr of cardAttrs) {
       const value = listing.attributes[attr.key];
       if (value !== undefined && value !== '' && value !== null) {
-        if (attr.type === 'select' && attr.options) {
-          pills.push(resolveSelectLabel(attr.options, value, lang));
-        } else {
-          pills.push(formatAttributeValue(value, attr.unit));
-        }
+        const formatted = formatAttributeValue(attr, value, lang);
+        if (formatted) pills.push(formatted);
       }
       if (pills.length >= 3) break; // Max 3 pills
     }
@@ -142,7 +139,7 @@ export default function ListingCard({ listing, onFavoriteChange }: Props) {
             </span>
           </div>
         ) : (
-          <p className="text-lg font-bold text-indigo-500">
+          <p className="text-lg font-bold text-primary-500">
             {listing.price.toLocaleString('pl-PL')} {listing.currency}
           </p>
         )}

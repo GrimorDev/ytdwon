@@ -45,7 +45,7 @@ export default function PromotePage() {
 
     try {
       const plan = PROMOTION_PLANS.find(p => p.id === selectedPlan)!;
-      const { data } = await stripeApi.createPromoteSession(listing.id, plan.days);
+      const { data } = await stripeApi.promote(listing.id, selectedPlan);
       // Redirect to Stripe Checkout
       window.location.href = data.url;
     } catch (err) {
@@ -57,7 +57,7 @@ export default function PromotePage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
       </div>
     );
   }
@@ -102,7 +102,7 @@ export default function PromotePage() {
           </div>
           <div>
             <h2 className="font-semibold">{listing.title}</h2>
-            <p className="text-lg font-bold text-indigo-500">{listing.price.toLocaleString()} PLN</p>
+            <p className="text-lg font-bold text-primary-500">{listing.price.toLocaleString()} PLN</p>
             <p className="text-sm text-gray-500">{listing.city}</p>
           </div>
         </div>
@@ -122,8 +122,8 @@ export default function PromotePage() {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
               <h3 className="font-medium">{t.promote.benefit2Title}</h3>
@@ -150,17 +150,17 @@ export default function PromotePage() {
             onClick={() => setSelectedPlan(plan.id)}
             className={`card relative text-left transition-all ${
               selectedPlan === plan.id
-                ? 'ring-2 ring-indigo-500 border-indigo-500'
+                ? 'ring-2 ring-primary-500 border-primary-500'
                 : 'hover:border-gray-400 dark:hover:border-gray-600'
             }`}
           >
             {plan.popular && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-xs font-bold px-3 py-1 rounded-full">
                 {t.promote.popular}
               </span>
             )}
             <div className="text-center">
-              <p className="text-3xl font-bold text-indigo-500">{plan.days}</p>
+              <p className="text-3xl font-bold text-primary-500">{plan.days}</p>
               <p className="text-sm text-gray-500 mb-3">{t.promote.days}</p>
               <p className="text-2xl font-bold">{plan.price} PLN</p>
               <p className="text-xs text-gray-500">
@@ -168,7 +168,7 @@ export default function PromotePage() {
               </p>
             </div>
             {selectedPlan === plan.id && (
-              <div className="absolute top-2 right-2 w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center">
+              <div className="absolute top-2 right-2 w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center">
                 <Check className="w-4 h-4 text-white" />
               </div>
             )}

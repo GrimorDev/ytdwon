@@ -3,7 +3,6 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import {
   getAttributesForCategory,
-  resolveSelectLabel,
   formatAttributeValue,
   type AttributeDefinition,
 } from '../../config/categoryAttributes';
@@ -33,12 +32,7 @@ export default function AttributeDisplay({
 
   const formatValue = (attr: AttributeDefinition, value: any): string => {
     if (value === undefined || value === null || value === '') return '-';
-
-    if (attr.type === 'select' && attr.options) {
-      return resolveSelectLabel(attr.options, value, lang);
-    }
-
-    return formatAttributeValue(value, attr.unit);
+    return formatAttributeValue(attr, value, lang);
   };
 
   // Get attributes that have values

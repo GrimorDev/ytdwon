@@ -427,9 +427,8 @@ export function getCardAttributes(slug: string): AttributeDefinition[] {
 }
 
 // Helper: resolve select value to localized label
-export function resolveSelectLabel(attr: AttributeDefinition, value: string, lang: 'pl' | 'en'): string {
-  if (attr.type !== 'select' || !attr.options) return value;
-  const option = attr.options.find(o => o.value === value);
+export function resolveSelectLabel(options: AttributeOption[], value: string, lang: 'pl' | 'en'): string {
+  const option = options.find(o => o.value === value);
   if (!option) return value;
   return lang === 'pl' ? option.labelPl : option.labelEn;
 }
@@ -437,11 +436,13 @@ export function resolveSelectLabel(attr: AttributeDefinition, value: string, lan
 // Helper: format attribute value for display
 export function formatAttributeValue(attr: AttributeDefinition, value: any, lang: 'pl' | 'en'): string {
   if (value === undefined || value === null || value === '') return '';
-  if (attr.type === 'select') return resolveSelectLabel(attr, String(value), lang);
+  if (attr.type === 'select' && attr.options) {
+    return resolveSelectLabel(attr.options, String(value), lang);
+  }
   if (attr.type === 'number' && attr.unit) {
     const num = Number(value);
     if (attr.key === 'mileage') return `${num.toLocaleString('pl-PL')} ${attr.unit}`;
-    return `${value} ${attr.unit}`;
+    return `${num} ${attr.unit}`;
   }
   return String(value);
 }

@@ -27,7 +27,7 @@ export default function MyListingsPage() {
     }
   };
 
-  const handleStatusChange = async (id: string, status: string) => {
+  const handleStatusChange = async (id: string, status: 'ACTIVE' | 'SOLD' | 'ARCHIVED') => {
     try {
       await listingsApi.updateStatus(id, status);
       setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l));
@@ -63,7 +63,7 @@ export default function MyListingsPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
       </div>
     );
   }
@@ -85,7 +85,7 @@ export default function MyListingsPage() {
             key={f}
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              filter === f ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+              filter === f ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
             }`}
           >
             {f === 'ALL' ? t.myListings.all : t.listings[`status${f.charAt(0) + f.slice(1).toLowerCase()}` as keyof typeof t.listings]}
@@ -121,10 +121,10 @@ export default function MyListingsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <Link to={`/ogloszenia/${listing.id}`} className="font-semibold hover:text-indigo-500 transition-colors line-clamp-1">
+                    <Link to={`/ogloszenia/${listing.id}`} className="font-semibold hover:text-primary-500 transition-colors line-clamp-1">
                       {listing.title}
                     </Link>
-                    <p className="text-lg font-bold text-indigo-500">{listing.price.toLocaleString()} PLN</p>
+                    <p className="text-lg font-bold text-primary-500">{listing.price.toLocaleString()} PLN</p>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(listing.status)}`}>
                     {t.listings[`status${listing.status.charAt(0) + listing.status.slice(1).toLowerCase()}` as keyof typeof t.listings]}

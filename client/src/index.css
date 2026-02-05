@@ -2,14 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   VIPILE - Nowa Kolorystyka
+   Dark: #635985, #443C68, #393053, #18122B
+   ======================================== */
+
 /* Dark theme (default) */
 html.dark body {
-  @apply bg-gray-950 text-gray-100;
+  background-color: #18122B;
+  color: #e8e4f0;
 }
 
 /* Light theme */
 html.light body {
-  @apply bg-gray-50 text-gray-900;
+  background: linear-gradient(135deg, #f8f7fc 0%, #f0edf7 100%);
+  color: #2d2742;
 }
 
 body {
@@ -19,8 +26,14 @@ body {
 }
 
 @layer components {
+  /* ===== BUTTONS ===== */
   .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #635985 0%, #7c6aab 100%);
+    @apply text-white font-semibold py-2.5 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg;
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #7c6aab 0%, #9181bd 100%);
+    transform: translateY(-1px);
   }
 
   .btn-secondary {
@@ -28,7 +41,7 @@ body {
   }
 
   .btn-outline {
-    @apply border-2 border-indigo-500 text-indigo-500 hover:bg-indigo-500 hover:text-white font-semibold py-2 px-5 rounded-lg transition-all duration-200;
+    @apply border-2 font-semibold py-2 px-5 rounded-lg transition-all duration-200;
   }
 
   .btn-danger {
@@ -36,52 +49,157 @@ body {
   }
 
   .badge-promoted {
-    @apply bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full;
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    @apply text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm;
   }
 
-  /* Dark */
+  /* ===== DARK MODE ===== */
   html.dark .btn-secondary {
-    @apply bg-gray-700 hover:bg-gray-600 text-white;
+    background-color: #393053;
+    @apply text-gray-200 hover:bg-opacity-80;
   }
-  html.dark .input-field {
-    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all;
-  }
-  html.dark .card {
-    @apply bg-gray-900 border border-gray-800 rounded-xl p-6;
-  }
-  html.dark .card-hover {
-    @apply bg-gray-900 border border-gray-800 rounded-xl transition-all duration-200 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10;
-  }
-  html.dark .nav-bar {
-    @apply bg-gray-900/95 backdrop-blur-md border-b border-gray-800;
-  }
-  html.dark .footer-bar {
-    @apply border-t border-gray-800 text-gray-500 bg-gray-900;
-  }
-  html.dark .sidebar {
-    @apply bg-gray-900 border border-gray-800 rounded-xl;
+  html.dark .btn-secondary:hover {
+    background-color: #443C68;
   }
 
-  /* Light */
+  html.dark .btn-outline {
+    border-color: #635985;
+    color: #9181bd;
+  }
+  html.dark .btn-outline:hover {
+    background-color: #635985;
+    color: white;
+  }
+
+  html.dark .input-field {
+    background-color: #221d32;
+    border: 1px solid #393053;
+    @apply w-full rounded-lg px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all;
+    --tw-ring-color: #635985;
+  }
+  html.dark .input-field:focus {
+    border-color: #635985;
+  }
+
+  html.dark .card {
+    background-color: #221d32;
+    border: 1px solid #393053;
+    @apply rounded-xl p-6;
+  }
+
+  html.dark .card-hover {
+    background-color: #221d32;
+    border: 1px solid #393053;
+    @apply rounded-xl transition-all duration-200;
+  }
+  html.dark .card-hover:hover {
+    border-color: #635985;
+    box-shadow: 0 10px 40px -10px rgba(99, 89, 133, 0.3);
+  }
+
+  html.dark .nav-bar {
+    background-color: rgba(24, 18, 43, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid #393053;
+  }
+
+  html.dark .footer-bar {
+    background-color: #18122B;
+    border-top: 1px solid #393053;
+    @apply text-gray-400;
+  }
+
+  html.dark .sidebar {
+    background-color: #221d32;
+    border: 1px solid #393053;
+    @apply rounded-xl;
+  }
+
+  /* ===== LIGHT MODE ===== */
   html.light .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-900;
+    background-color: #ebe8f0;
+    color: #393053;
   }
+  html.light .btn-secondary:hover {
+    background-color: #ddd8e8;
+  }
+
+  html.light .btn-outline {
+    border-color: #635985;
+    color: #635985;
+  }
+  html.light .btn-outline:hover {
+    background-color: #635985;
+    color: white;
+  }
+
   html.light .input-field {
-    @apply w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all;
+    @apply w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all;
+    --tw-ring-color: #635985;
   }
+  html.light .input-field:focus {
+    border-color: #635985;
+  }
+
   html.light .card {
     @apply bg-white border border-gray-200 rounded-xl p-6 shadow-sm;
   }
+
   html.light .card-hover {
-    @apply bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-200 hover:border-indigo-500/50 hover:shadow-lg;
+    @apply bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-200;
   }
+  html.light .card-hover:hover {
+    border-color: #9181bd;
+    box-shadow: 0 10px 40px -10px rgba(99, 89, 133, 0.2);
+  }
+
   html.light .nav-bar {
-    @apply bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid #ebe8f0;
+    @apply shadow-sm;
   }
+
   html.light .footer-bar {
     @apply border-t border-gray-200 text-gray-500 bg-white;
   }
+
   html.light .sidebar {
     @apply bg-white border border-gray-200 rounded-xl shadow-sm;
   }
 }
+
+/* ===== SCROLLBAR STYLING ===== */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #18122B;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #393053;
+  border-radius: 4px;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #443C68;
+}
+
+/* ===== SELECTION ===== */
+html.dark ::selection {
+  background-color: #635985;
+  color: white;
+}
+html.light ::selection {
+  background-color: #cdc5e3;
+  color: #393053;
+}
+
+/* ===== CUSTOM ACCENT COLORS ===== */
+html.dark .text-accent { color: #9181bd; }
+html.dark .bg-accent { background-color: #635985; }
+html.dark .border-accent { border-color: #635985; }
+
+html.light .text-accent { color: #635985; }
+html.light .bg-accent { background-color: #635985; }
+html.light .border-accent { border-color: #635985; }
