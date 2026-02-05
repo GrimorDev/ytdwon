@@ -24,6 +24,7 @@ export interface Category {
   icon: string;
   slug: string;
   parentId?: string;
+  parent?: Category;
   children?: Category[];
   _count?: { listings: number };
 }
@@ -53,6 +54,7 @@ export interface Listing {
   longitude?: number;
   userId: string;
   categoryId: string;
+  attributes?: Record<string, any>;
   images: ListingImage[];
   category?: Category;
   user?: ListingUser;
@@ -60,6 +62,16 @@ export interface Listing {
   favoritesCount?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AutocompleteSuggestion {
+  id: string;
+  title: string;
+  price: number;
+  currency: string;
+  city: string;
+  thumbnailUrl?: string;
+  categorySlug?: string;
 }
 
 export interface ListingUser {

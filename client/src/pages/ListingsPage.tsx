@@ -1,10 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, useParams } from 'react-router-dom';
-import { SlidersHorizontal, Grid3X3, List, X } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, useParams, Link } from 'react-router-dom';
+import { SlidersHorizontal, Grid3X3, List, X, ChevronRight, Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal } from 'lucide-react';
+
+const iconMap: Record<string, any> = {
+  Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal
+};
 import { listingsApi, categoriesApi } from '../services/api';
 import type { Listing, Category } from '../types';
 import ListingCard from '../components/Listing/ListingCard';
 import { useTranslation } from '../i18n';
+import CategoryFilters from '../components/Listing/CategoryFilters';
+import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrumbs';
 
 export default function ListingsPage() {
   const { t, lang } = useTranslation();
@@ -32,10 +38,33 @@ export default function ListingsPage() {
   const [filterMaxPrice, setFilterMaxPrice] = useState(maxPrice);
   const [filterCondition, setFilterCondition] = useState(condition);
   const [filterSort, setFilterSort] = useState(sort);
+  const [attrFilters, setAttrFilters] = useState<Record<string, string>>({});
+
+  // Parse attr_* params from URL on load
+  useEffect(() => {
+    const attrs: Record<string, string> = {};
+    searchParams.forEach((value, key) => {
+      if (key.startsWith('attr_')) {
+        attrs[key.replace('attr_', '')] = value;
+      }
+    });
+    setAttrFilters(attrs);
+  }, []);
 
   useEffect(() => {
     categoriesApi.getAll().then(({ data }) => setCategories(data.categories)).catch(() => {});
   }, []);
+
+  // Build attributes object from URL params
+  const urlAttrFilters = useMemo(() => {
+    const attrs: Record<string, string> = {};
+    searchParams.forEach((value, key) => {
+      if (key.startsWith('attr_')) {
+        attrs[key.replace('attr_', '')] = value;
+      }
+    });
+    return attrs;
+  }, [searchParams]);
 
   useEffect(() => {
     setLoading(true);
@@ -49,12 +78,13 @@ export default function ListingsPage() {
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       condition: condition || undefined,
       sort: sort || undefined,
+      attributes: Object.keys(urlAttrFilters).length > 0 ? urlAttrFilters : undefined,
     }).then(({ data }) => {
       setListings(data.listings);
       setTotal(data.pagination.total);
       setTotalPages(data.pagination.totalPages);
     }).catch(() => {}).finally(() => setLoading(false));
-  }, [page, search, category, city, minPrice, maxPrice, condition, sort]);
+  }, [page, search, category, city, minPrice, maxPrice, condition, sort, urlAttrFilters]);
 
   const applyFilters = () => {
     const params: Record<string, string> = {};
@@ -64,6 +94,10 @@ export default function ListingsPage() {
     if (filterMaxPrice) params.maxPrice = filterMaxPrice;
     if (filterCondition) params.condition = filterCondition;
     if (filterSort !== 'newest') params.sort = filterSort;
+    // Add attribute filters with attr_ prefix
+    Object.entries(attrFilters).forEach(([key, value]) => {
+      if (value) params[`attr_${key}`] = value;
+    });
     setSearchParams(params);
     setShowFilters(false);
   };
@@ -74,14 +108,59 @@ export default function ListingsPage() {
     setFilterMaxPrice('');
     setFilterCondition('');
     setFilterSort('newest');
+    setAttrFilters({});
     setSearchParams(search ? { search } : {});
     setShowFilters(false);
   };
 
+  // Reset attribute filters when category changes
+  useEffect(() => {
+    setAttrFilters({});
+  }, [slug]);
+
   const currentCategory = categories.find(c => c.slug === slug);
+
+  // Find parent category if current is a subcategory
+  const parentCategory = currentCategory?.parentId
+    ? categories.find(c => c.id === currentCategory.parentId)
+    : undefined;
+
+  // Check if current category is a parent with children (show landing page)
+  const isParentCategory = currentCategory && currentCategory.children && currentCategory.children.length > 0;
+
+  const getCategoryIcon = (iconName: string) => {
+    const Icon = iconMap[iconName] || MoreHorizontal;
+    return <Icon className="w-8 h-8" />;
+  };
+
+  // Build breadcrumb items
+  const getBreadcrumbItems = (): BreadcrumbItem[] => {
+    const items: BreadcrumbItem[] = [
+      { label: t.listings.title || (lang === 'pl' ? 'Ogłoszenia' : 'Listings'), href: '/ogloszenia' }
+    ];
+
+    if (search) {
+      items.push({ label: `"${search}"` });
+    } else if (currentCategory) {
+      if (parentCategory) {
+        items.push({
+          label: lang === 'pl' ? parentCategory.namePl : parentCategory.nameEn,
+          href: `/kategoria/${parentCategory.slug}`
+        });
+      }
+      items.push({ label: lang === 'pl' ? currentCategory.namePl : currentCategory.nameEn });
+    }
+
+    return items;
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Breadcrumbs */}
+      <div className="mb-4">
+        <Breadcrumbs items={getBreadcrumbItems()} />
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -108,19 +187,55 @@ export default function ListingsPage() {
         </div>
       </div>
 
-      {/* Subcategories */}
-      {currentCategory?.children && currentCategory.children.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {currentCategory.children.map(sub => (
-            <a key={sub.id} href={`/kategoria/${sub.slug}`} className="btn-secondary !py-1.5 !px-3 text-sm">
-              {lang === 'pl' ? sub.namePl : sub.nameEn}
-            </a>
-          ))}
+      {/* Parent category landing - Big subcategory tiles */}
+      {isParentCategory && (
+        <div className="mb-10">
+          <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">
+            {lang === 'pl' ? 'Wybierz podkategorię' : 'Choose a subcategory'}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {currentCategory.children!.map(sub => (
+              <Link
+                key={sub.id}
+                to={`/kategoria/${sub.slug}`}
+                className="card-hover p-6 flex items-center gap-4 group"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:from-indigo-100 group-hover:to-purple-100 dark:group-hover:from-indigo-900/50 dark:group-hover:to-purple-900/50 transition-colors">
+                  {getCategoryIcon(sub.icon)}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {lang === 'pl' ? sub.namePl : sub.nameEn}
+                  </h3>
+                  {sub._count?.listings !== undefined && (
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      {sub._count.listings} {lang === 'pl' ? 'ogłoszeń' : 'listings'}
+                    </p>
+                  )}
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+              </Link>
+            ))}
+          </div>
+
+          {/* Optional: Show some promoted listings from parent category */}
+          {listings.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">
+                {lang === 'pl' ? 'Polecane w tej kategorii' : 'Featured in this category'}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {listings.slice(0, 4).map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Filters panel */}
-      {showFilters && (
+      {/* Filters panel - only show for leaf categories */}
+      {!isParentCategory && showFilters && (
         <div className="card mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">{t.listings.filters}</h3>
@@ -157,6 +272,18 @@ export default function ListingsPage() {
               </select>
             </div>
           </div>
+
+          {/* Category-specific filters */}
+          {currentCategory?.slug && (
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <CategoryFilters
+                categorySlug={currentCategory.slug}
+                values={attrFilters}
+                onChange={setAttrFilters}
+              />
+            </div>
+          )}
+
           <div className="flex gap-2 mt-4">
             <button onClick={applyFilters} className="btn-primary !py-2">{t.listings.apply}</button>
             <button onClick={clearFilters} className="btn-secondary !py-2">{t.listings.clear}</button>
@@ -164,31 +291,33 @@ export default function ListingsPage() {
         </div>
       )}
 
-      {/* Listings */}
-      {loading ? (
-        <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' : 'grid-cols-1'}`}>
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="card animate-pulse">
-              <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-800 rounded-lg mb-3" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-2" />
-              <div className="h-5 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
-            </div>
-          ))}
-        </div>
-      ) : listings.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-gray-500 text-lg">{t.listings.noResults}</p>
-        </div>
-      ) : (
-        <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' : 'grid-cols-1'}`}>
-          {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
+      {/* Listings - only show full grid for leaf categories */}
+      {!isParentCategory && (
+        loading ? (
+          <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' : 'grid-cols-1'}`}>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="card animate-pulse">
+                <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-800 rounded-lg mb-3" />
+                <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-2" />
+                <div className="h-5 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : listings.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-gray-500 text-lg">{t.listings.noResults}</p>
+          </div>
+        ) : (
+          <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' : 'grid-cols-1'}`}>
+            {listings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        )
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+      {/* Pagination - only for leaf categories */}
+      {!isParentCategory && totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-8">
           {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => i + 1).map(p => (
             <button

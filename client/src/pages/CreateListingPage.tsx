@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Plus } from 'lucide-react';
 import { listingsApi, categoriesApi, uploadApi } from '../services/api';
 import type { Category } from '../types';
 import { useTranslation } from '../i18n';
+import AttributeForm from '../components/Listing/AttributeForm';
 
 export default function CreateListingPage() {
   const { t, lang } = useTranslation();
@@ -18,8 +19,20 @@ export default function CreateListingPage() {
   const [condition, setCondition] = useState('USED');
   const [city, setCity] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+
+  // Get category slug for selected category
+  const selectedCategorySlug = useMemo(() => {
+    const cat = categories.find(c => c.id === categoryId);
+    return cat?.slug || '';
+  }, [categoryId, categories]);
+
+  // Reset attributes when category changes
+  useEffect(() => {
+    setAttributes({});
+  }, [categoryId]);
 
   useEffect(() => {
     categoriesApi.getAll().then(({ data }) => {
@@ -70,6 +83,7 @@ export default function CreateListingPage() {
         condition,
         city,
         categoryId,
+        attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
         images: imageUrls,
       });
 
@@ -129,6 +143,14 @@ export default function CreateListingPage() {
               ))}
             </select>
           </div>
+
+          {selectedCategorySlug && (
+            <AttributeForm
+              categorySlug={selectedCategorySlug}
+              values={attributes}
+              onChange={setAttributes}
+            />
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-1">{t.create.descriptionLabel} *</label>

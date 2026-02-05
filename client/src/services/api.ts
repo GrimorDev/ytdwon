@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, Listing, Category, Conversation, Message, Review, PaginatedResponse, UserStats } from '../types';
+import type { AuthResponse, Listing, Category, Conversation, Message, Review, PaginatedResponse, UserStats, AutocompleteSuggestion } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -65,15 +65,25 @@ export const listingsApi = {
     condition?: string;
     sort?: string;
     userId?: string;
+    attributes?: Record<string, string>;
   }) => {
     const searchParams = new URLSearchParams();
     if (params) {
-      Object.entries(params).forEach(([key, val]) => {
+      const { attributes, ...rest } = params;
+      Object.entries(rest).forEach(([key, val]) => {
         if (val !== undefined && val !== '') searchParams.set(key, String(val));
       });
+      // Serialize attributes as attr_* params
+      if (attributes) {
+        Object.entries(attributes).forEach(([key, val]) => {
+          if (val !== undefined && val !== '') searchParams.set(`attr_${key}`, val);
+        });
+      }
     }
     return api.get<PaginatedResponse<Listing>>(`/listings?${searchParams.toString()}`);
   },
+  autocomplete: (q: string, limit = 6) =>
+    api.get<{ suggestions: AutocompleteSuggestion[] }>(`/listings/autocomplete?q=${encodeURIComponent(q)}&limit=${limit}`),
   getMy: (status?: string) =>
     api.get<{ listings: Listing[] }>(`/listings/my${status ? `?status=${status}` : ''}`),
   getById: (id: string) => api.get<{ listing: Listing }>(`/listings/${id}`),

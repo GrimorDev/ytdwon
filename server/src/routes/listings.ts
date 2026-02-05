@@ -2,9 +2,43 @@ import { Router, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { authRequired, authOptional, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { getAttributesForCategory, AttributeDefinition } from '../config/categoryAttributes';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+// Helper: Validate and sanitize attributes for a category
+function validateAttributes(categorySlug: string, rawAttributes: Record<string, any> | undefined): Record<string, any> | null {
+  if (!rawAttributes || typeof rawAttributes !== 'object') return null;
+
+  const definitions = getAttributesForCategory(categorySlug);
+  if (definitions.length === 0) return null;
+
+  const sanitized: Record<string, any> = {};
+
+  for (const def of definitions) {
+    const value = rawAttributes[def.key];
+    if (value === undefined || value === null || value === '') continue;
+
+    if (def.type === 'text') {
+      sanitized[def.key] = String(value).slice(0, 200);
+    } else if (def.type === 'number') {
+      const num = parseFloat(value);
+      if (!isNaN(num)) {
+        if (def.min !== undefined && num < def.min) continue;
+        if (def.max !== undefined && num > def.max) continue;
+        sanitized[def.key] = num;
+      }
+    } else if (def.type === 'select' && def.options) {
+      const strVal = String(value);
+      if (def.options.some(o => o.value === strVal)) {
+        sanitized[def.key] = strVal;
+      }
+    }
+  }
+
+  return Object.keys(sanitized).length > 0 ? sanitized : null;
+}
 
 // Get listings (public, with filters)
 router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
@@ -41,6 +75,7 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
       ];
     }
 
+    let categorySlug: string | undefined;
     if (category) {
       // Support both slug and id
       const cat = await prisma.category.findFirst({
@@ -48,6 +83,7 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
         include: { children: { select: { id: true } } },
       });
       if (cat) {
+        categorySlug = cat.slug;
         const categoryIds = [cat.id, ...cat.children.map(c => c.id)];
         where.categoryId = { in: categoryIds };
       }
@@ -66,6 +102,54 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
 
     if (condition && ['NEW', 'USED', 'DAMAGED'].includes(condition)) {
       where.condition = condition as any;
+    }
+
+    // Attribute filtering (attr_* params)
+    const attrFilters: { key: string; value: string; isMin?: boolean; isMax?: boolean }[] = [];
+    for (const [key, value] of Object.entries(req.query)) {
+      if (key.startsWith('attr_') && value && typeof value === 'string') {
+        const attrKey = key.replace('attr_', '').replace(/Min$/, '').replace(/Max$/, '');
+        const isMin = key.endsWith('Min');
+        const isMax = key.endsWith('Max');
+        attrFilters.push({ key: attrKey, value, isMin, isMax });
+      }
+    }
+
+    // Apply attribute filters using Prisma JSON filtering
+    if (attrFilters.length > 0 && categorySlug) {
+      const definitions = getAttributesForCategory(categorySlug);
+
+      for (const filter of attrFilters) {
+        const def = definitions.find(d => d.key === filter.key);
+        if (!def) continue;
+
+        if (def.type === 'select') {
+          // Exact match for select fields
+          where.AND = where.AND || [];
+          (where.AND as any[]).push({
+            attributes: { path: [filter.key], equals: filter.value },
+          });
+        } else if (def.type === 'number') {
+          // For numeric range, use raw query or JSON path comparison
+          // Prisma's JSON filtering for gte/lte is limited, so we use string comparison approach
+          // A cleaner solution would be $queryRaw but this works for basic cases
+          where.AND = where.AND || [];
+          if (filter.isMin) {
+            (where.AND as any[]).push({
+              attributes: { path: [filter.key], gte: parseFloat(filter.value) },
+            });
+          } else if (filter.isMax) {
+            (where.AND as any[]).push({
+              attributes: { path: [filter.key], lte: parseFloat(filter.value) },
+            });
+          } else {
+            // Exact match
+            (where.AND as any[]).push({
+              attributes: { path: [filter.key], equals: parseFloat(filter.value) },
+            });
+          }
+        }
+      }
     }
 
     let orderBy: Prisma.ListingOrderByWithRelationInput[] = [
@@ -131,6 +215,54 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
   }
 });
 
+// Autocomplete search (must be before /:id)
+router.get('/autocomplete', async (req, res, next) => {
+  try {
+    const { q, limit = '6' } = req.query as Record<string, string>;
+
+    if (!q || q.length < 2) {
+      return res.json({ suggestions: [] });
+    }
+
+    const limitNum = Math.min(10, Math.max(1, parseInt(limit)));
+
+    const listings = await prisma.listing.findMany({
+      where: {
+        status: 'ACTIVE',
+        title: { contains: q, mode: 'insensitive' },
+      },
+      orderBy: [
+        { promoted: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      take: limitNum,
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        currency: true,
+        city: true,
+        images: { take: 1, select: { url: true } },
+        category: { select: { slug: true } },
+      },
+    });
+
+    res.json({
+      suggestions: listings.map(l => ({
+        id: l.id,
+        title: l.title,
+        price: l.price,
+        currency: l.currency,
+        city: l.city,
+        thumbnailUrl: l.images[0]?.url || null,
+        categorySlug: l.category?.slug || null,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Get my listings
 router.get('/my', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
@@ -165,7 +297,9 @@ router.get('/:id', authOptional, async (req: AuthRequest, res: Response, next) =
       where: { id },
       include: {
         images: { orderBy: { order: 'asc' } },
-        category: true,
+        category: {
+          include: { parent: true },
+        },
         user: {
           select: {
             id: true, name: true, city: true, avatarUrl: true,
@@ -233,7 +367,7 @@ router.get('/:id', authOptional, async (req: AuthRequest, res: Response, next) =
 // Create listing
 router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
-    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images } = req.body;
+    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, attributes } = req.body;
 
     if (!title || !description || price === undefined || !city || !categoryId) {
       throw new AppError(400, 'Title, description, price, city and category are required');
@@ -251,10 +385,13 @@ router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => 
       throw new AppError(400, 'Invalid price');
     }
 
-    const categoryExists = await prisma.category.findUnique({ where: { id: categoryId } });
-    if (!categoryExists) {
+    const category = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (!category) {
       throw new AppError(400, 'Invalid category');
     }
+
+    // Validate attributes based on category
+    const validatedAttributes = validateAttributes(category.slug, attributes);
 
     const listing = await prisma.listing.create({
       data: {
@@ -268,6 +405,7 @@ router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => 
         longitude: longitude ? parseFloat(longitude) : null,
         userId: req.userId!,
         categoryId,
+        attributes: validatedAttributes,
         images: images && images.length > 0 ? {
           create: images.map((img: { url: string }, idx: number) => ({
             url: img.url,
@@ -291,11 +429,14 @@ router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => 
 router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
     const id = req.params.id as string;
-    const existing = await prisma.listing.findUnique({ where: { id } });
+    const existing = await prisma.listing.findUnique({
+      where: { id },
+      include: { category: true },
+    });
     if (!existing) throw new AppError(404, 'Listing not found');
     if (existing.userId !== req.userId) throw new AppError(403, 'Not authorized');
 
-    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, status, isOnSale } = req.body;
+    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, status, isOnSale, attributes } = req.body;
 
     // If images provided, delete old and create new
     if (images) {
@@ -337,6 +478,18 @@ router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) =
       priceData.originalPrice = null;
     }
 
+    // Get category for attribute validation
+    const targetCategoryId = categoryId || existing.categoryId;
+    const targetCategory = categoryId
+      ? await prisma.category.findUnique({ where: { id: categoryId } })
+      : existing.category;
+
+    // Validate attributes if provided
+    let attributesData: any = undefined;
+    if (attributes !== undefined) {
+      attributesData = validateAttributes(targetCategory?.slug || '', attributes);
+    }
+
     const listing = await prisma.listing.update({
       where: { id },
       data: {
@@ -350,6 +503,7 @@ router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) =
         ...(latitude !== undefined && { latitude: latitude ? parseFloat(latitude) : null }),
         ...(longitude !== undefined && { longitude: longitude ? parseFloat(longitude) : null }),
         ...(categoryId && { categoryId }),
+        ...(attributesData !== undefined && { attributes: attributesData }),
         ...(images && {
           images: {
             create: images.map((img: { url: string }, idx: number) => ({

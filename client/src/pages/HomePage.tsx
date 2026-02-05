@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, ArrowRight, TrendingUp, Shield, Zap, Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, TrendingUp, Shield, Zap, Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal } from 'lucide-react';
 import { categoriesApi, listingsApi } from '../services/api';
 import type { Category, Listing } from '../types';
 import ListingCard from '../components/Listing/ListingCard';
 import { useTranslation } from '../i18n';
+import SearchAutocomplete from '../components/Search/SearchAutocomplete';
 
 const iconMap: Record<string, any> = {
   Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal
@@ -12,8 +13,6 @@ const iconMap: Record<string, any> = {
 
 export default function HomePage() {
   const { t, lang } = useTranslation();
-  const navigate = useNavigate();
-  const [search, setSearch] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [promoted, setPromoted] = useState<Listing[]>([]);
   const [recent, setRecent] = useState<Listing[]>([]);
@@ -30,13 +29,6 @@ export default function HomePage() {
       setRecent(allListings);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (search.trim()) {
-      navigate(`/ogloszenia?search=${encodeURIComponent(search.trim())}`);
-    }
-  };
 
   const getCategoryIcon = (iconName: string) => {
     const Icon = iconMap[iconName] || MoreHorizontal;
@@ -55,21 +47,9 @@ export default function HomePage() {
           <p className="text-lg md:text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">
             {t.home.heroSubtitle}
           </p>
-          <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t.home.searchPlaceholder}
-                className="w-full bg-white dark:bg-gray-900 rounded-xl pl-12 pr-4 py-4 text-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-300 shadow-2xl"
-              />
-              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 btn-primary !py-2.5 !px-6">
-                {t.home.searchBtn}
-              </button>
-            </div>
-          </form>
+          <div className="max-w-2xl mx-auto">
+            <SearchAutocomplete size="lg" className="shadow-2xl" />
+          </div>
         </div>
       </section>
 

@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Heart, MessageCircle, Plus, User, Sun, Moon, Menu, X, LogOut, Package, Settings, Globe } from 'lucide-react';
+import { Heart, MessageCircle, Plus, User, Sun, Moon, Menu, X, LogOut, Package, Settings, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from '../../i18n';
 import { chatApi } from '../../services/api';
+import SearchAutocomplete from '../Search/SearchAutocomplete';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggle } = useTheme();
   const { t, lang, setLang } = useTranslation();
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -25,14 +25,6 @@ export default function Navbar() {
       return () => clearInterval(interval);
     }
   }, [user]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (search.trim()) {
-      navigate(`/ogloszenia?search=${encodeURIComponent(search.trim())}`);
-      setSearch('');
-    }
-  };
 
   return (
     <nav className="nav-bar sticky top-0 z-50">
@@ -49,18 +41,7 @@ export default function Navbar() {
           </Link>
 
           {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-xl mx-4 hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t.nav.searchPlaceholder}
-                className="input-field !pl-10 !py-2"
-              />
-            </div>
-          </form>
+          <SearchAutocomplete className="flex-1 max-w-xl mx-4 hidden md:block" />
 
           {/* Desktop actions */}
           <div className="flex items-center gap-2">
@@ -156,18 +137,7 @@ export default function Navbar() {
         {/* Mobile search */}
         {mobileOpen && (
           <div className="md:hidden pb-4 space-y-3">
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={t.nav.searchPlaceholder}
-                  className="input-field !pl-10 !py-2"
-                />
-              </div>
-            </form>
+            <SearchAutocomplete />
             {user && (
               <div className="flex gap-2">
                 <Link to="/dodaj" className="btn-primary !py-2 flex-1 text-center text-sm" onClick={() => setMobileOpen(false)}>

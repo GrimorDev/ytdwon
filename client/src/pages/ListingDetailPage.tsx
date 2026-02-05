@@ -5,6 +5,8 @@ import { listingsApi, favoritesApi, chatApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Listing } from '../types';
+import AttributeDisplay from '../components/Listing/AttributeDisplay';
+import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrumbs';
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -109,15 +111,22 @@ export default function ListingDetailPage() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Breadcrumb */}
         {listing.category && (
-          <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-            <Link to="/ogloszenia" className="hover:text-indigo-500 transition-colors">{t.listings.title}</Link>
-            <span>/</span>
-            <Link to={`/kategoria/${listing.category.slug}`} className="hover:text-indigo-500 transition-colors">
-              {lang === 'pl' ? listing.category.namePl : listing.category.nameEn}
-            </Link>
-            <span>/</span>
-            <span className="text-gray-900 dark:text-white truncate max-w-[200px]">{listing.title}</span>
-          </nav>
+          <div className="mb-6">
+            <Breadcrumbs
+              items={[
+                { label: t.listings.title || (lang === 'pl' ? 'Ogłoszenia' : 'Listings'), href: '/ogloszenia' },
+                ...(listing.category.parent ? [{
+                  label: lang === 'pl' ? listing.category.parent.namePl : listing.category.parent.nameEn,
+                  href: `/kategoria/${listing.category.parent.slug}`
+                }] : []),
+                {
+                  label: lang === 'pl' ? listing.category.namePl : listing.category.nameEn,
+                  href: `/kategoria/${listing.category.slug}`
+                },
+                { label: listing.title }
+              ]}
+            />
+          </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -201,6 +210,16 @@ export default function ListingDetailPage() {
                     <img src={img.url} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Attributes (below gallery, collapsed by default) */}
+            {listing.category && (
+              <div className="mt-6">
+                <AttributeDisplay
+                  categorySlug={listing.category.slug}
+                  attributes={listing.attributes}
+                />
               </div>
             )}
 
@@ -408,8 +427,17 @@ export default function ListingDetailPage() {
           </div>
         </div>
 
-        {/* Description - mobile only (shown below on smaller screens) */}
-        <div className="mt-8 lg:hidden">
+        {/* Mobile: Attributes + Description */}
+        <div className="mt-8 lg:hidden space-y-4">
+          {/* Attributes - mobile */}
+          {listing.category && (
+            <AttributeDisplay
+              categorySlug={listing.category.slug}
+              attributes={listing.attributes}
+            />
+          )}
+
+          {/* Description - mobile */}
           <div className="card !p-6">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
               <Package className="w-5 h-5 text-indigo-500" />

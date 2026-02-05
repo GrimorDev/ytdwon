@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { X, Plus } from 'lucide-react';
 import { listingsApi, categoriesApi, uploadApi } from '../services/api';
 import type { Category, Listing } from '../types';
 import { useTranslation } from '../i18n';
+import AttributeForm from '../components/Listing/AttributeForm';
 
 export default function EditListingPage() {
   const { t, lang } = useTranslation();
@@ -21,9 +22,16 @@ export default function EditListingPage() {
   const [city, setCity] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [status, setStatus] = useState('ACTIVE');
+  const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [existingImages, setExistingImages] = useState<{ id: string; url: string }[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
+
+  // Get category slug for selected category
+  const selectedCategorySlug = useMemo(() => {
+    const cat = categories.find(c => c.id === categoryId);
+    return cat?.slug || '';
+  }, [categoryId, categories]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,6 +49,7 @@ export default function EditListingPage() {
         setCity(listing.city);
         setCategoryId(listing.categoryId);
         setStatus(listing.status);
+        setAttributes(listing.attributes || {});
         setExistingImages(listing.images || []);
 
         const flat: Category[] = [];
@@ -103,6 +112,7 @@ export default function EditListingPage() {
         city,
         categoryId,
         status,
+        attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
         images: allImages,
       });
 
@@ -199,6 +209,14 @@ export default function EditListingPage() {
               ))}
             </select>
           </div>
+
+          {selectedCategorySlug && (
+            <AttributeForm
+              categorySlug={selectedCategorySlug}
+              values={attributes}
+              onChange={setAttributes}
+            />
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-1">{t.create.descriptionLabel} *</label>
