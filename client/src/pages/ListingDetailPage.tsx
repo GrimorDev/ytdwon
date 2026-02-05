@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag } from 'lucide-react';
+import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag, Copy, Check } from 'lucide-react';
 import { listingsApi, favoritesApi, chatApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Listing } from '../types';
 import AttributeDisplay from '../components/Listing/AttributeDisplay';
 import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrumbs';
+import ListingCard from '../components/Listing/ListingCard';
+import { addToViewHistory } from '../utils/viewHistory';
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +23,9 @@ export default function ListingDetailPage() {
   const [sending, setSending] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
   const [lightbox, setLightbox] = useState(false);
+  const [similarListings, setSimilarListings] = useState<Listing[]>([]);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -28,10 +33,41 @@ export default function ListingDetailPage() {
       .then(({ data }) => {
         setListing(data.listing);
         setFavorited(data.listing.isFavorited || false);
+
+        // Add to view history
+        addToViewHistory({
+          id: data.listing.id,
+          title: data.listing.title,
+          price: data.listing.price,
+          currency: data.listing.currency,
+          thumbnailUrl: data.listing.images?.[0]?.url,
+        });
+
+        // Fetch similar listings
+        if (data.listing.category?.slug) {
+          listingsApi.getAll({
+            category: data.listing.category.slug,
+            limit: 4,
+          }).then(({ data: simData }) => {
+            setSimilarListings(simData.listings.filter(l => l.id !== id).slice(0, 4));
+          }).catch(() => {});
+        }
       })
       .catch(() => navigate('/'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleShare = () => {
+    setShowShareMenu(!showShareMenu);
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
 
   const handleFavorite = async () => {
     if (!user || !listing) return;
@@ -306,8 +342,8 @@ export default function ListingDetailPage() {
                 </div>
 
                 {/* Favorite + Share buttons */}
-                {user && user.id !== listing.userId && (
-                  <div className="flex gap-2 mt-4">
+                <div className="flex gap-2 mt-4">
+                  {user && user.id !== listing.userId && (
                     <button
                       onClick={handleFavorite}
                       className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 font-medium transition-all text-sm ${
@@ -319,8 +355,54 @@ export default function ListingDetailPage() {
                       <Heart className={`w-4 h-4 ${favorited ? 'fill-red-500' : ''}`} />
                       {favorited ? t.detail.removeFromFavorites : t.detail.addToFavorites}
                     </button>
+                  )}
+
+                  {/* Share button */}
+                  <div className="relative">
+                    <button
+                      onClick={handleShare}
+                      className="py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-medium transition-all text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      {lang === 'pl' ? 'Udostępnij' : 'Share'}
+                    </button>
+
+                    {/* Share dropdown */}
+                    {showShareMenu && (
+                      <div className="absolute right-0 top-full mt-2 bg-white dark:bg-dark-600 rounded-xl shadow-lg border border-gray-200 dark:border-dark-500 overflow-hidden z-10 min-w-[180px]">
+                        <button
+                          onClick={copyLink}
+                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-500 flex items-center gap-2"
+                        >
+                          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                          {copied ? (lang === 'pl' ? 'Skopiowano!' : 'Copied!') : (lang === 'pl' ? 'Kopiuj link' : 'Copy link')}
+                        </button>
+                        <a
+                          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-500 flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                          </svg>
+                          Facebook
+                        </a>
+                        <a
+                          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(listing.title)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-500 flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                          </svg>
+                          X (Twitter)
+                        </a>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Seller Card */}
@@ -448,6 +530,31 @@ export default function ListingDetailPage() {
             </p>
           </div>
         </div>
+
+        {/* Similar listings */}
+        {similarListings.length > 0 && (
+          <div className="mt-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">
+                {lang === 'pl' ? 'Podobne ogłoszenia' : 'Similar listings'}
+              </h2>
+              {listing.category && (
+                <Link
+                  to={`/kategoria/${listing.category.slug}`}
+                  className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
+                >
+                  {lang === 'pl' ? 'Zobacz więcej' : 'See more'}
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {similarListings.map(sim => (
+                <ListingCard key={sim.id} listing={sim} viewMode="grid" />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lightbox */}
