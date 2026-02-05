@@ -8,11 +8,11 @@ const router = Router();
 const prisma = new PrismaClient();
 
 // Helper: Validate and sanitize attributes for a category
-function validateAttributes(categorySlug: string, rawAttributes: Record<string, any> | undefined): Record<string, any> | null {
-  if (!rawAttributes || typeof rawAttributes !== 'object') return null;
+function validateAttributes(categorySlug: string, rawAttributes: Record<string, any> | undefined): Record<string, any> | undefined {
+  if (!rawAttributes || typeof rawAttributes !== 'object') return undefined;
 
   const definitions = getAttributesForCategory(categorySlug);
-  if (definitions.length === 0) return null;
+  if (definitions.length === 0) return undefined;
 
   const sanitized: Record<string, any> = {};
 
@@ -37,7 +37,7 @@ function validateAttributes(categorySlug: string, rawAttributes: Record<string, 
     }
   }
 
-  return Object.keys(sanitized).length > 0 ? sanitized : null;
+  return Object.keys(sanitized).length > 0 ? sanitized : undefined;
 }
 
 // Get listings (public, with filters)
