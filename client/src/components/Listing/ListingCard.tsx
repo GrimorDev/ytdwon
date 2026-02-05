@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Clock } from 'lucide-react';
+import { Heart, MapPin, Clock, Eye, Check, Image } from 'lucide-react';
 import type { Listing } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { favoritesApi } from '../../services/api';
@@ -9,10 +9,11 @@ import { getCardAttributes, formatAttributeValue } from '../../config/categoryAt
 
 interface Props {
   listing: Listing;
+  viewMode?: 'grid' | 'list';
   onFavoriteChange?: () => void;
 }
 
-export default function ListingCard({ listing, onFavoriteChange }: Props) {
+export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChange }: Props) {
   const { user } = useAuth();
   const { t, lang } = useTranslation();
   const [favorited, setFavorited] = useState(listing.isFavorited || false);
@@ -67,15 +68,142 @@ export default function ListingCard({ listing, onFavoriteChange }: Props) {
   const timeAgo = (date: string) => {
     const diff = Date.now() - new Date(date).getTime();
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 60) return `${minutes}min`;
+    if (minutes < 60) return lang === 'pl' ? `${minutes} min temu` : `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h`;
+    if (hours < 24) return lang === 'pl' ? `${hours} godz. temu` : `${hours}h ago`;
     const days = Math.floor(hours / 24);
-    return `${days}d`;
+    if (days < 7) return lang === 'pl' ? `${days} dni temu` : `${days}d ago`;
+    return new Date(date).toLocaleDateString('pl-PL');
   };
 
   const imageUrl = listing.images?.[0]?.url || '';
+  const imageCount = listing.images?.length || 0;
 
+  // LIST VIEW - horizontal layout like OLX
+  if (viewMode === 'list') {
+    return (
+      <Link
+        to={`/ogloszenia/${listing.id}`}
+        className="card-hover flex gap-4 p-0 overflow-hidden group"
+      >
+        {/* Image */}
+        <div className="relative w-[220px] h-[165px] flex-shrink-0 overflow-hidden bg-gray-200 dark:bg-gray-800">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={listing.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              <PackageIcon className="w-12 h-12" />
+            </div>
+          )}
+
+          {/* Image count badge */}
+          {imageCount > 1 && (
+            <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded flex items-center gap-1">
+              <Image className="w-3 h-3" />
+              {imageCount}
+            </span>
+          )}
+
+          {/* Promoted badge */}
+          {listing.promoted && (
+            <span className="absolute top-2 left-2 badge-promoted">
+              {t.listings.promoted}
+            </span>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 py-3 pr-4 flex flex-col min-w-0">
+          {/* Title */}
+          <h3 className="font-semibold text-base mb-1 group-hover:text-primary-500 transition-colors line-clamp-2">
+            {listing.title}
+          </h3>
+
+          {/* Location & Time */}
+          <div className="flex items-center gap-3 text-sm text-gray-500 mb-2">
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5" />
+              {listing.city}
+            </span>
+            <span>•</span>
+            <span>{timeAgo(listing.createdAt)}</span>
+          </div>
+
+          {/* Attributes / Description preview */}
+          {pills.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {pills.map((pill, idx) => (
+                <span
+                  key={idx}
+                  className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded"
+                >
+                  {pill}
+                </span>
+              ))}
+            </div>
+          ) : listing.description && (
+            <p className="text-sm text-gray-500 line-clamp-2 mb-2">
+              {listing.description}
+            </p>
+          )}
+
+          {/* Bottom row: condition badge */}
+          <div className="mt-auto flex items-center gap-2">
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${conditionColor(listing.condition)}`}>
+              {conditionLabel(listing.condition)}
+            </span>
+            {listing.user?.isVerified && (
+              <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                <Check className="w-3 h-3" />
+                {lang === 'pl' ? 'Zweryfikowany' : 'Verified'}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Right side: Price & Actions */}
+        <div className="flex flex-col items-end justify-between py-3 pr-4 flex-shrink-0 min-w-[140px]">
+          {/* Price */}
+          <div className="text-right">
+            {listing.isOnSale && listing.originalPrice ? (
+              <>
+                <span className="text-sm text-gray-400 line-through block">
+                  {listing.originalPrice.toLocaleString('pl-PL')} {listing.currency}
+                </span>
+                <span className="text-xl font-bold text-red-500">
+                  {listing.price.toLocaleString('pl-PL')} {listing.currency}
+                </span>
+              </>
+            ) : (
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
+                {listing.price.toLocaleString('pl-PL')} {listing.currency}
+              </span>
+            )}
+          </div>
+
+          {/* Favorite button */}
+          {user && (
+            <button
+              onClick={handleFavorite}
+              className={`p-2 rounded-full transition-colors ${
+                favorited
+                  ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
+                  : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <Heart className={`w-5 h-5 ${favorited ? 'fill-current' : ''}`} />
+            </button>
+          )}
+        </div>
+      </Link>
+    );
+  }
+
+  // GRID VIEW - original card layout
   return (
     <Link to={`/ogloszenia/${listing.id}`} className="card-hover overflow-hidden group block">
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-200 dark:bg-gray-800">
@@ -101,6 +229,13 @@ export default function ListingCard({ listing, onFavoriteChange }: Props) {
           <button onClick={handleFavorite} className="absolute top-2 right-2 p-2 rounded-full bg-black/30 hover:bg-black/50 transition-colors">
             <Heart className={`w-5 h-5 ${favorited ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>
+        )}
+        {/* Image count */}
+        {imageCount > 1 && (
+          <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded flex items-center gap-1">
+            <Image className="w-3 h-3" />
+            {imageCount}
+          </span>
         )}
       </div>
       <div className="p-3">

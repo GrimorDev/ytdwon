@@ -82,6 +82,7 @@ export interface ListingUser {
   createdAt?: string;
   phone?: string;
   avgRating?: number;
+  isVerified?: boolean;
   _count?: { listings: number; reviewsReceived: number };
   listingsCount?: number;
   reviewsCount?: number;
