@@ -22,6 +22,9 @@ import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
 import AdminBannersPage from './pages/admin/AdminBannersPage';
 import AdminLayout from './components/Admin/AdminLayout';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import ContactPage from './pages/ContactPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -77,6 +80,9 @@ export default function App() {
         <Route path="/uzytkownik/:id" element={<UserProfilePage />} />
         <Route path="/konto" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
         <Route path="/promuj/:id" element={<ProtectedRoute><PromotePage /></ProtectedRoute>} />
+        <Route path="/regulamin" element={<TermsPage />} />
+        <Route path="/polityka-prywatnosci" element={<PrivacyPage />} />
+        <Route path="/kontakt" element={<ContactPage />} />
         <Route path="/logowanie" element={<LoginPage />} />
         <Route path="/rejestracja" element={<RegisterPage />} />
         <Route path="*" element={<Navigate to="/" />} />

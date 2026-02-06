@@ -113,7 +113,7 @@ export default function HomePage() {
                   : 'Promoted listings appear on the homepage and at the top of category lists. Increase your listing visibility!'}
               </p>
               <div className="flex items-center justify-center gap-4">
-                <Link to="/dodaj-ogloszenie" className="btn-primary flex items-center gap-2">
+                <Link to="/dodaj" className="btn-primary flex items-center gap-2">
                   <Plus className="w-5 h-5" />
                   {t.nav.addListing}
                 </Link>

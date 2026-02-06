@@ -175,9 +175,9 @@ export default function RegisterPage() {
               />
               <span className="text-sm text-gray-500">
                 {t.auth.acceptTerms}{' '}
-                <a href="#" className="text-primary-500 hover:underline">{t.auth.termsLink}</a>{' '}
+                <a href="/regulamin" target="_blank" className="text-primary-500 hover:underline">{t.auth.termsLink}</a>{' '}
                 {t.auth.and}{' '}
-                <a href="#" className="text-primary-500 hover:underline">{t.auth.privacyLink}</a>
+                <a href="/polityka-prywatnosci" target="_blank" className="text-primary-500 hover:underline">{t.auth.privacyLink}</a>
               </span>
             </label>
 

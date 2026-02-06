@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 import { newsletterApi } from '../../services/api';
 import Logo from './Logo';
 
 export default function Footer() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const isPl = lang === 'pl';
   const [email, setEmail] = useState('');
   const [newsletterState, setNewsletterState] = useState<'idle' | 'loading' | 'success' | 'duplicate' | 'error'>('idle');
 
@@ -79,32 +80,67 @@ export default function Footer() {
       </div>
 
       {/* Footer content */}
-      <div className="py-8">
+      <div className="py-10">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Brand */}
             <div>
               <div className="mb-3">
                 <Logo size="sm" />
               </div>
               <p className="text-sm">{t.footer.description}</p>
             </div>
+
+            {/* Serwis */}
             <div>
-              <h3 className="font-semibold mb-3">{t.footer.links}</h3>
+              <h3 className="font-semibold mb-3">{isPl ? 'Serwis' : 'Service'}</h3>
               <div className="space-y-2 text-sm">
-                <Link to="/ogloszenia" className="block hover:text-primary-500">{t.footer.allListings}</Link>
-                <Link to="/dodaj" className="block hover:text-primary-500">{t.footer.addListing}</Link>
+                <Link to="/ogloszenia" className="block hover:text-primary-500 transition-colors">{t.footer.allListings}</Link>
+                <Link to="/dodaj" className="block hover:text-primary-500 transition-colors">{t.footer.addListing}</Link>
+                <Link to="/kontakt" className="block hover:text-primary-500 transition-colors flex items-center gap-1">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  {isPl ? 'Pomoc i FAQ' : 'Help & FAQ'}
+                </Link>
               </div>
             </div>
+
+            {/* Konto */}
             <div>
               <h3 className="font-semibold mb-3">{t.footer.account}</h3>
               <div className="space-y-2 text-sm">
-                <Link to="/logowanie" className="block hover:text-primary-500">{t.nav.login}</Link>
-                <Link to="/rejestracja" className="block hover:text-primary-500">{t.nav.register}</Link>
+                <Link to="/logowanie" className="block hover:text-primary-500 transition-colors">{t.nav.login}</Link>
+                <Link to="/rejestracja" className="block hover:text-primary-500 transition-colors">{t.nav.register}</Link>
+              </div>
+            </div>
+
+            {/* Informacje prawne */}
+            <div>
+              <h3 className="font-semibold mb-3">{isPl ? 'Informacje prawne' : 'Legal'}</h3>
+              <div className="space-y-2 text-sm">
+                <Link to="/regulamin" className="block hover:text-primary-500 transition-colors">
+                  {isPl ? 'Regulamin' : 'Terms of Service'}
+                </Link>
+                <Link to="/polityka-prywatnosci" className="block hover:text-primary-500 transition-colors">
+                  {isPl ? 'Polityka prywatnosci' : 'Privacy Policy'}
+                </Link>
               </div>
             </div>
           </div>
-          <hr className="my-6 border-gray-200 dark:border-gray-800" />
-          <p className="text-center text-sm">Vipile &copy; {new Date().getFullYear()}</p>
+
+          <hr className="my-8 border-gray-200 dark:border-gray-800" />
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-gray-500">
+              Vipile &copy; {new Date().getFullYear()}. {isPl ? 'Wszelkie prawa zastrzezone.' : 'All rights reserved.'}
+            </p>
+            <div className="flex items-center gap-4 text-xs text-gray-400">
+              <Link to="/regulamin" className="hover:text-primary-500 transition-colors">{isPl ? 'Regulamin' : 'Terms'}</Link>
+              <span>·</span>
+              <Link to="/polityka-prywatnosci" className="hover:text-primary-500 transition-colors">{isPl ? 'Prywatnosc' : 'Privacy'}</Link>
+              <span>·</span>
+              <Link to="/kontakt" className="hover:text-primary-500 transition-colors">{isPl ? 'Kontakt' : 'Contact'}</Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
