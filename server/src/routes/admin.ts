@@ -10,15 +10,17 @@ const prisma = new PrismaClient();
 
 router.get('/stats', adminRequired, async (_req: AuthRequest, res: Response, next) => {
   try {
-    const [totalUsers, totalListings, totalActiveListings, pendingReports, totalReports] = await Promise.all([
+    const [totalUsers, totalListings, totalActiveListings, pendingReports, totalReports, totalBanners, totalSubscribers] = await Promise.all([
       prisma.user.count(),
       prisma.listing.count(),
       prisma.listing.count({ where: { status: 'ACTIVE' } }),
       prisma.report.count({ where: { status: 'PENDING' } }),
       prisma.report.count(),
+      prisma.banner.count(),
+      prisma.newsletterSubscriber.count(),
     ]);
 
-    res.json({ totalUsers, totalListings, totalActiveListings, pendingReports, totalReports });
+    res.json({ totalUsers, totalListings, totalActiveListings, pendingReports, totalReports, totalBanners, totalSubscribers });
   } catch (err) {
     next(err);
   }
@@ -399,6 +401,153 @@ router.get('/conversations/:id/messages', adminRequired, async (req: AuthRequest
     });
 
     res.json({ conversation, messages });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ==================== BANNERS ====================
+
+// List all banners
+router.get('/banners', adminRequired, async (_req: AuthRequest, res: Response, next) => {
+  try {
+    const banners = await prisma.banner.findMany({
+      orderBy: { displayOrder: 'asc' },
+    });
+    res.json({ banners });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Create banner
+router.post('/banners', adminRequired, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { title, subtitle, imageUrl, linkUrl, buttonText, displayOrder, enabled } = req.body;
+
+    if (!imageUrl) throw new AppError(400, 'Image URL is required');
+
+    const banner = await prisma.banner.create({
+      data: {
+        title: title || null,
+        subtitle: subtitle || null,
+        imageUrl,
+        linkUrl: linkUrl || null,
+        buttonText: buttonText || null,
+        displayOrder: displayOrder !== undefined ? parseInt(displayOrder) : 0,
+        enabled: enabled !== undefined ? Boolean(enabled) : true,
+      },
+    });
+
+    res.status(201).json({ banner });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Update banner
+router.put('/banners/:id', adminRequired, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const existing = await prisma.banner.findUnique({ where: { id: req.params.id as string } });
+    if (!existing) throw new AppError(404, 'Banner not found');
+
+    const { title, subtitle, imageUrl, linkUrl, buttonText, displayOrder, enabled } = req.body;
+
+    const banner = await prisma.banner.update({
+      where: { id: req.params.id as string },
+      data: {
+        ...(title !== undefined && { title: title || null }),
+        ...(subtitle !== undefined && { subtitle: subtitle || null }),
+        ...(imageUrl !== undefined && { imageUrl }),
+        ...(linkUrl !== undefined && { linkUrl: linkUrl || null }),
+        ...(buttonText !== undefined && { buttonText: buttonText || null }),
+        ...(displayOrder !== undefined && { displayOrder: parseInt(displayOrder) }),
+        ...(enabled !== undefined && { enabled: Boolean(enabled) }),
+      },
+    });
+
+    res.json({ banner });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete banner
+router.delete('/banners/:id', adminRequired, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const existing = await prisma.banner.findUnique({ where: { id: req.params.id as string } });
+    if (!existing) throw new AppError(404, 'Banner not found');
+
+    await prisma.banner.delete({ where: { id: req.params.id as string } });
+
+    res.json({ message: 'Banner deleted' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Reorder banners
+router.patch('/banners/reorder', adminRequired, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { banners } = req.body;
+    if (!Array.isArray(banners)) throw new AppError(400, 'Invalid banners data');
+
+    await Promise.all(
+      banners.map((b: { id: string; order: number }) =>
+        prisma.banner.update({
+          where: { id: b.id },
+          data: { displayOrder: b.order },
+        })
+      )
+    );
+
+    res.json({ message: 'Order updated' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ==================== NEWSLETTER ====================
+
+// List newsletter subscribers
+router.get('/newsletter', adminRequired, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { page = '1', limit = '20' } = req.query as Record<string, string>;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+
+    const [subscribers, total] = await Promise.all([
+      prisma.newsletterSubscriber.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+      }),
+      prisma.newsletterSubscriber.count(),
+    ]);
+
+    res.json({
+      subscribers,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete newsletter subscriber
+router.delete('/newsletter/:id', adminRequired, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const existing = await prisma.newsletterSubscriber.findUnique({ where: { id: req.params.id as string } });
+    if (!existing) throw new AppError(404, 'Subscriber not found');
+
+    await prisma.newsletterSubscriber.delete({ where: { id: req.params.id as string } });
+
+    res.json({ message: 'Subscriber removed' });
   } catch (err) {
     next(err);
   }

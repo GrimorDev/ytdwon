@@ -263,6 +263,18 @@ export const pl = {
     feature3Title: 'Darmowe ogloszenia',
     feature3Desc: 'Podstawowe ogloszenia sa darmowe',
     browseAll: 'Przegladaj wszystkie ogloszenia',
+    statsUsers: 'Uzytkownikow',
+    statsListings: 'Aktywnych ogloszen',
+    statsTransactions: 'Transakcji',
+    statsCities: 'Miast',
+    newsletterTitle: 'Badz na biezaco',
+    newsletterSubtitle: 'Zapisz sie do newslettera i nie przegap najlepszych okazji',
+    newsletterPlaceholder: 'Twoj adres e-mail',
+    newsletterButton: 'Zapisz sie',
+    newsletterSuccess: 'Dzieki za zapis!',
+    newsletterDuplicate: 'Ten email jest juz zapisany',
+    badgeNew: 'NOWE',
+    badgeHot: 'HOT',
   },
 
   // Report

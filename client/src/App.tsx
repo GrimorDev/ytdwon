@@ -20,6 +20,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminListingsPage from './pages/admin/AdminListingsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
+import AdminBannersPage from './pages/admin/AdminBannersPage';
 import AdminLayout from './components/Admin/AdminLayout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="listings" element={<AdminListingsPage />} />
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="reports" element={<AdminReportsPage />} />
+        <Route path="banners" element={<AdminBannersPage />} />
       </Route>
 
       {/* Standard user-facing routes with Navbar/Footer */}

@@ -263,6 +263,18 @@ export const en = {
     feature3Title: 'Free listings',
     feature3Desc: 'Basic listings are free',
     browseAll: 'Browse all listings',
+    statsUsers: 'Users',
+    statsListings: 'Active listings',
+    statsTransactions: 'Transactions',
+    statsCities: 'Cities',
+    newsletterTitle: 'Stay up to date',
+    newsletterSubtitle: 'Subscribe to our newsletter and never miss the best deals',
+    newsletterPlaceholder: 'Your email address',
+    newsletterButton: 'Subscribe',
+    newsletterSuccess: 'Thanks for subscribing!',
+    newsletterDuplicate: 'This email is already subscribed',
+    badgeNew: 'NEW',
+    badgeHot: 'HOT',
   },
 
   // Report

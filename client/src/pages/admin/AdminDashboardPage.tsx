@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Users, Flag, Activity, TrendingUp, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Users, Flag, Activity, TrendingUp, AlertCircle, Image, Mail } from 'lucide-react';
 import { adminApi } from '../../services/api';
 import type { AdminStats } from '../../types';
 
@@ -67,6 +67,22 @@ export default function AdminDashboardPage() {
       link: '/a-panel/reports',
       highlight: stats.pendingReports > 0,
     },
+    {
+      label: 'Bannery',
+      value: stats.totalBanners,
+      icon: Image,
+      color: 'bg-indigo-500',
+      lightBg: 'bg-indigo-50 dark:bg-indigo-900/20',
+      link: '/a-panel/banners',
+    },
+    {
+      label: 'Newsletter',
+      value: stats.totalSubscribers,
+      icon: Mail,
+      color: 'bg-teal-500',
+      lightBg: 'bg-teal-50 dark:bg-teal-900/20',
+      link: '/a-panel',
+    },
   ];
 
   return (
@@ -79,7 +95,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cards.map(card => (
           <Link
             key={card.label}
@@ -134,6 +150,14 @@ export default function AdminDashboardPage() {
                 {stats.totalActiveListings} / {stats.totalListings}
               </span>
             </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">Aktywne bannery</span>
+              <span className="font-semibold">{stats.totalBanners}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">Subskrybenci newsletter</span>
+              <span className="font-semibold">{stats.totalSubscribers}</span>
+            </div>
           </div>
         </div>
 
@@ -160,6 +184,12 @@ export default function AdminDashboardPage() {
               className="block p-3 rounded-xl border border-gray-200 dark:border-dark-500 hover:bg-gray-50 dark:hover:bg-dark-600 transition-all text-sm"
             >
               Zarzadzaj ogloszeniami ({stats.totalListings})
+            </Link>
+            <Link
+              to="/a-panel/banners"
+              className="block p-3 rounded-xl border border-gray-200 dark:border-dark-500 hover:bg-gray-50 dark:hover:bg-dark-600 transition-all text-sm"
+            >
+              Zarzadzaj bannerami ({stats.totalBanners})
             </Link>
           </div>
         </div>

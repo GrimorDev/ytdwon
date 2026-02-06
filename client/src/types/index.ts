@@ -190,6 +190,8 @@ export interface AdminStats {
   totalActiveListings: number;
   pendingReports: number;
   totalReports: number;
+  totalBanners: number;
+  totalSubscribers: number;
 }
 
 export interface AdminUser {
@@ -215,4 +217,30 @@ export interface AdminConversation {
   messages: Message[];
   _count?: { messages: number };
   updatedAt: string;
+}
+
+export interface Banner {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  imageUrl: string;
+  linkUrl?: string;
+  buttonText?: string;
+  displayOrder: number;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  createdAt: string;
+}
+
+export interface SiteStats {
+  users: number;
+  listings: number;
+  transactions: number;
+  cities: number;
 }

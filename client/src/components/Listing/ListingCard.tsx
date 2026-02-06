@@ -89,6 +89,10 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
     ? { label: lang === 'pl' ? 'Zarezerwowane' : 'Reserved', className: 'bg-amber-500 text-white' }
     : null;
 
+  // Automatic badges
+  const isNew = !isInactive && (Date.now() - new Date(listing.createdAt).getTime()) < 24 * 60 * 60 * 1000;
+  const isHot = !isInactive && (listing.views > 50 || (listing.favoritesCount !== undefined && listing.favoritesCount > 5));
+
   // LIST VIEW - horizontal layout like OLX
   if (viewMode === 'list') {
     return (
@@ -118,12 +122,24 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
             </span>
           )}
 
-          {/* Promoted badge */}
-          {listing.promoted && !isInactive && (
-            <span className="absolute top-2 left-2 badge-promoted">
-              {t.listings.promoted}
-            </span>
-          )}
+          {/* Badges */}
+          <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+            {listing.promoted && !isInactive && (
+              <span className="badge-promoted">
+                {t.listings.promoted}
+              </span>
+            )}
+            {isNew && (
+              <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full shadow">
+                {t.home.badgeNew}
+              </span>
+            )}
+            {isHot && !isNew && (
+              <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full shadow flex items-center gap-0.5">
+                🔥 {t.home.badgeHot}
+              </span>
+            )}
+          </div>
 
           {/* Sold/Reserved overlay */}
           {statusBadge && (
@@ -250,6 +266,16 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
           {listing.isOnSale && listing.originalPrice && !isInactive && (
             <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
               -{Math.round((1 - listing.price / listing.originalPrice) * 100)}%
+            </span>
+          )}
+          {isNew && (
+            <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full shadow">
+              {t.home.badgeNew}
+            </span>
+          )}
+          {isHot && !isNew && (
+            <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full shadow flex items-center gap-0.5">
+              🔥 {t.home.badgeHot}
             </span>
           )}
         </div>

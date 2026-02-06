@@ -215,3 +215,26 @@ model Report {
   @@index([reporterId])
   @@index([createdAt(sort: Desc)])
 }
+
+model Banner {
+  id           String   @id @default(uuid())
+  title        String?
+  subtitle     String?
+  imageUrl     String
+  linkUrl      String?
+  buttonText   String?
+  displayOrder Int      @default(0)
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([enabled, displayOrder])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}

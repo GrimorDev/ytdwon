@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthResponse, Listing, Category, Conversation, Message, Review, PaginatedResponse, UserStats, AutocompleteSuggestion, Report, AdminStats, AdminUser, AdminConversation, ReportCategory } from '../types';
+import type { AuthResponse, Listing, Category, Conversation, Message, Review, PaginatedResponse, UserStats, AutocompleteSuggestion, Report, AdminStats, AdminUser, AdminConversation, ReportCategory, Banner, NewsletterSubscriber, SiteStats } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -226,6 +226,43 @@ export const adminApi = {
   },
   getConversationMessages: (id: string) =>
     api.get<{ conversation: AdminConversation; messages: Message[] }>(`/admin/conversations/${id}/messages`),
+
+  // Banners
+  getBanners: () => api.get<{ banners: Banner[] }>('/admin/banners'),
+  createBanner: (data: Partial<Banner>) =>
+    api.post<{ banner: Banner }>('/admin/banners', data),
+  updateBanner: (id: string, data: Partial<Banner>) =>
+    api.put<{ banner: Banner }>(`/admin/banners/${id}`, data),
+  deleteBanner: (id: string) => api.delete(`/admin/banners/${id}`),
+  reorderBanners: (banners: Array<{ id: string; order: number }>) =>
+    api.patch('/admin/banners/reorder', { banners }),
+
+  // Newsletter
+  getNewsletter: (params?: { page?: number; limit?: number }) => {
+    const sp = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined) sp.set(k, String(v));
+      });
+    }
+    return api.get<{ subscribers: NewsletterSubscriber[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>(`/admin/newsletter?${sp.toString()}`);
+  },
+  deleteSubscriber: (id: string) => api.delete(`/admin/newsletter/${id}`),
+};
+
+// Public: Banners
+export const bannersApi = {
+  getActive: () => api.get<{ banners: Banner[] }>('/banners'),
+};
+
+// Public: Site stats
+export const siteStatsApi = {
+  get: () => api.get<SiteStats>('/banners/stats'),
+};
+
+// Newsletter (public)
+export const newsletterApi = {
+  subscribe: (email: string) => api.post<{ message: string }>('/banners/newsletter', { email }),
 };
 
 export default api;
