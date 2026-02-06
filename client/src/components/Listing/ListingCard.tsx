@@ -227,6 +227,11 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
                 {listing.price.toLocaleString('pl-PL')} {listing.currency}
               </span>
             )}
+            {listing.negotiable && !isInactive && (
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                {lang === 'pl' ? 'Do negocjacji' : 'Negotiable'}
+              </span>
+            )}
           </div>
 
           {/* Favorite button */}
@@ -348,6 +353,11 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
           <p className={`text-lg font-bold ${isReserved ? 'text-amber-600 dark:text-amber-400' : 'text-primary-500'}`}>
             {listing.price.toLocaleString('pl-PL')} {listing.currency}
           </p>
+        )}
+        {listing.negotiable && !isInactive && (
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+            {lang === 'pl' ? 'Do negocjacji' : 'Negotiable'}
+          </span>
         )}
         <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
           <span className="flex items-center gap-1">

@@ -50,6 +50,8 @@ export interface Listing {
   status: 'ACTIVE' | 'SOLD' | 'RESERVED' | 'ARCHIVED';
   promoted: boolean;
   promotedUntil?: string;
+  negotiable?: boolean;
+  videoUrl?: string;
   views: number;
   city: string;
   latitude?: number;

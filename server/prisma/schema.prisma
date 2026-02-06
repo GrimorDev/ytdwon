@@ -100,6 +100,8 @@ model Listing {
   status          ListingStatus @default(ACTIVE)
   promoted        Boolean       @default(false)
   promotedUntil   DateTime?
+  negotiable      Boolean       @default(false)
+  videoUrl        String?
   views           Int           @default(0)
   city            String
   latitude        Float?

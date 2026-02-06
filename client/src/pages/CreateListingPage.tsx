@@ -20,6 +20,8 @@ export default function CreateListingPage() {
   const [city, setCity] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
+  const [videoUrl, setVideoUrl] = useState('');
+  const [negotiable, setNegotiable] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
@@ -85,6 +87,8 @@ export default function CreateListingPage() {
         categoryId,
         attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
         images: imageUrls,
+        videoUrl: videoUrl.trim() || undefined,
+        negotiable,
       });
 
       navigate(`/ogloszenia/${data.listing.id}`);
@@ -175,6 +179,31 @@ export default function CreateListingPage() {
           <div>
             <label className="block text-sm font-medium mb-1">{t.create.cityLabel} *</label>
             <input value={city} onChange={e => setCity(e.target.value)} className="input-field" placeholder={t.create.cityPlaceholder} required />
+          </div>
+
+          {/* Negotiable toggle */}
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div className="relative">
+              <input type="checkbox" checked={negotiable} onChange={e => setNegotiable(e.target.checked)} className="sr-only" />
+              <div className={`w-10 h-6 rounded-full transition-colors ${negotiable ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${negotiable ? 'translate-x-4' : ''}`} />
+              </div>
+            </div>
+            <span className="text-sm font-medium">{t.create.negotiable}</span>
+          </label>
+        </div>
+
+        {/* Video URL */}
+        <div className="card space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">{t.create.videoUrl}</label>
+            <input
+              value={videoUrl}
+              onChange={e => setVideoUrl(e.target.value)}
+              className="input-field"
+              placeholder={t.create.videoPlaceholder}
+            />
+            <p className="text-xs text-gray-500 mt-1">{t.create.videoHint}</p>
           </div>
         </div>
 

@@ -3,7 +3,7 @@ import { useSearchParams, useParams, Link } from 'react-router-dom';
 import {
   SlidersHorizontal, Grid3X3, List, X, ChevronRight, ChevronDown, ChevronUp,
   Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal,
-  MapPin, Search, Heart, Bell
+  MapPin, Search, Heart, Bell, Star
 } from 'lucide-react';
 
 const iconMap: Record<string, any> = {
@@ -30,6 +30,7 @@ export default function ListingsPage() {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [listings, setListings] = useState<Listing[]>([]);
+  const [promotedListings, setPromotedListings] = useState<Listing[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -122,6 +123,7 @@ export default function ListingsPage() {
       attributes: Object.keys(urlAttrFilters).length > 0 ? urlAttrFilters : undefined,
     }).then(({ data }) => {
       setListings(data.listings);
+      setPromotedListings(data.promotedListings || []);
       setTotal(data.pagination.total);
       setTotalPages(data.pagination.totalPages);
     }).catch(() => {}).finally(() => setLoading(false));
@@ -564,6 +566,28 @@ export default function ListingsPage() {
                 </div>
               </div>
             </div>
+
+            {/* Promoted Listings Frame (max 4) */}
+            {!loading && promotedListings.length > 0 && (
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                      {t.listings.promoted}
+                    </span>
+                  </div>
+                  <div className={viewMode === 'grid'
+                    ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3'
+                    : 'space-y-3'
+                  }>
+                    {promotedListings.map((listing) => (
+                      <ListingCard key={listing.id} listing={listing} viewMode={viewMode} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Listings Grid/List */}
             {loading ? (

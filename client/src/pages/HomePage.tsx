@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, TrendingUp, Shield, Zap, Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal } from 'lucide-react';
+import { ArrowRight, TrendingUp, Shield, Zap, Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal, Star, Plus } from 'lucide-react';
 import { categoriesApi, listingsApi } from '../services/api';
 import type { Category, Listing } from '../types';
 import ListingCard from '../components/Listing/ListingCard';
@@ -16,18 +16,15 @@ export default function HomePage() {
   const { t, lang } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [promoted, setPromoted] = useState<Listing[]>([]);
-  const [recent, setRecent] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       categoriesApi.getAll(),
-      listingsApi.getAll({ limit: 8, sort: 'newest' }),
-    ]).then(([catRes, listRes]) => {
+      listingsApi.getPromoted(8),
+    ]).then(([catRes, promRes]) => {
       setCategories(catRes.data.categories);
-      const allListings = listRes.data.listings;
-      setPromoted(allListings.filter(l => l.promoted).slice(0, 4));
-      setRecent(allListings);
+      setPromoted(promRes.data.listings);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -73,34 +70,21 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Promoted */}
-        {promoted.length > 0 && (
-          <section className="py-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-amber-500" />
-                {t.home.promoted}
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {promoted.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Recent */}
+        {/* Promoted Listings */}
         <section className="py-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">{t.home.recent}</h2>
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
+              {t.home.promoted}
+            </h2>
             <Link to="/ogloszenia" className="text-primary-500 hover:text-primary-600 flex items-center gap-1 text-sm font-medium">
               {t.home.seeAll} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
+
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
+              {[...Array(4)].map((_, i) => (
                 <div key={i} className="card animate-pulse">
                   <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-800 rounded-lg mb-3" />
                   <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-2" />
@@ -108,11 +92,35 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : promoted.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {recent.map((listing) => (
+              {promoted.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} />
               ))}
+            </div>
+          ) : (
+            /* CTA when no promoted listings */
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center">
+                <TrendingUp className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">
+                {lang === 'pl' ? 'Wyrozniij swoje ogloszenie!' : 'Promote your listing!'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                {lang === 'pl'
+                  ? 'Promowane ogloszenia pojawiaja sie na stronie glownej i na gorze list w kategoriach. Zwieksz widocznosc swojego ogłoszenia!'
+                  : 'Promoted listings appear on the homepage and at the top of category lists. Increase your listing visibility!'}
+              </p>
+              <div className="flex items-center justify-center gap-4">
+                <Link to="/dodaj-ogloszenie" className="btn-primary flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  {t.nav.addListing}
+                </Link>
+                <Link to="/ogloszenia" className="text-primary-500 hover:text-primary-600 flex items-center gap-1 font-medium">
+                  {t.home.browseAll} <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           )}
         </section>

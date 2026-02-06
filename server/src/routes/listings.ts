@@ -170,23 +170,91 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
         orderBy.push({ createdAt: 'desc' });
     }
 
-    const [listings, total] = await Promise.all([
+    const includeFields = {
+      images: { orderBy: { order: 'asc' } as const, take: 1 },
+      category: { select: { name: true, slug: true, namePl: true, nameEn: true } },
+      user: { select: { id: true, name: true, city: true, avatarUrl: true } },
+      _count: { select: { favorites: true } },
+    };
+
+    // Fetch promoted listings separately (max 4 per page, matching same filters)
+    const promotedWhere = { ...where, promoted: true, status: 'ACTIVE' as const };
+    const regularWhere = { ...where };
+
+    const [promotedListings, listings, total] = await Promise.all([
       prisma.listing.findMany({
-        where,
+        where: promotedWhere,
+        orderBy: [{ createdAt: 'desc' }],
+        skip: (pageNum - 1) * 4,
+        take: 4,
+        include: includeFields,
+      }),
+      prisma.listing.findMany({
+        where: regularWhere,
         orderBy,
         skip,
         take: limitNum,
-        include: {
-          images: { orderBy: { order: 'asc' }, take: 1 },
-          category: { select: { name: true, slug: true, namePl: true, nameEn: true } },
-          user: { select: { id: true, name: true, city: true, avatarUrl: true } },
-          _count: { select: { favorites: true } },
-        },
+        include: includeFields,
       }),
       prisma.listing.count({ where }),
     ]);
 
     // Check if user has favorited these listings
+    const allListings = [...promotedListings, ...listings];
+    let userFavorites: Set<string> = new Set();
+    if (req.userId) {
+      const favs = await prisma.favorite.findMany({
+        where: { userId: req.userId, listingId: { in: allListings.map(l => l.id) } },
+        select: { listingId: true },
+      });
+      userFavorites = new Set(favs.map(f => f.listingId));
+    }
+
+    const mapListing = (l: any) => ({
+      ...l,
+      isFavorited: userFavorites.has(l.id),
+      favoritesCount: l._count.favorites,
+      _count: undefined,
+    });
+
+    res.json({
+      promotedListings: promotedListings.map(mapListing),
+      listings: listings.map(mapListing),
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get promoted listings (for homepage)
+router.get('/promoted', authOptional, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { limit = '8' } = req.query as Record<string, string>;
+    const limitNum = Math.min(20, Math.max(1, parseInt(limit)));
+
+    const listings = await prisma.listing.findMany({
+      where: {
+        status: 'ACTIVE',
+        promoted: true,
+      },
+      orderBy: [
+        { createdAt: 'desc' },
+      ],
+      take: limitNum,
+      include: {
+        images: { orderBy: { order: 'asc' }, take: 1 },
+        category: { select: { name: true, slug: true, namePl: true, nameEn: true } },
+        user: { select: { id: true, name: true, city: true, avatarUrl: true } },
+        _count: { select: { favorites: true } },
+      },
+    });
+
     let userFavorites: Set<string> = new Set();
     if (req.userId) {
       const favs = await prisma.favorite.findMany({
@@ -203,12 +271,6 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
         favoritesCount: l._count.favorites,
         _count: undefined,
       })),
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
-      },
     });
   } catch (err) {
     next(err);
@@ -367,7 +429,7 @@ router.get('/:id', authOptional, async (req: AuthRequest, res: Response, next) =
 // Create listing
 router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => {
   try {
-    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, attributes } = req.body;
+    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, attributes, videoUrl, negotiable } = req.body;
 
     if (!title || !description || price === undefined || !city || !categoryId) {
       throw new AppError(400, 'Title, description, price, city and category are required');
@@ -385,6 +447,15 @@ router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => 
       throw new AppError(400, 'Invalid price');
     }
 
+    // Validate videoUrl (YouTube/Vimeo)
+    let sanitizedVideoUrl: string | null = null;
+    if (videoUrl && typeof videoUrl === 'string' && videoUrl.trim()) {
+      const vUrl = videoUrl.trim();
+      if (vUrl.match(/^https?:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com)\//)) {
+        sanitizedVideoUrl = vUrl;
+      }
+    }
+
     const category = await prisma.category.findUnique({ where: { id: categoryId } });
     if (!category) {
       throw new AppError(400, 'Invalid category');
@@ -400,6 +471,8 @@ router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => 
         price: parseFloat(price),
         currency: currency || 'PLN',
         condition: condition || 'USED',
+        negotiable: negotiable === true,
+        videoUrl: sanitizedVideoUrl,
         city,
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
@@ -436,7 +509,22 @@ router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) =
     if (!existing) throw new AppError(404, 'Listing not found');
     if (existing.userId !== req.userId) throw new AppError(403, 'Not authorized');
 
-    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, status, isOnSale, attributes } = req.body;
+    const { title, description, price, currency, condition, city, latitude, longitude, categoryId, images, status, isOnSale, attributes, videoUrl, negotiable } = req.body;
+
+    // Validate videoUrl (YouTube/Vimeo)
+    let sanitizedVideoUrl: string | null | undefined = undefined;
+    if (videoUrl !== undefined) {
+      if (videoUrl && typeof videoUrl === 'string' && videoUrl.trim()) {
+        const vUrl = videoUrl.trim();
+        if (vUrl.match(/^https?:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com)\//)) {
+          sanitizedVideoUrl = vUrl;
+        } else {
+          sanitizedVideoUrl = null;
+        }
+      } else {
+        sanitizedVideoUrl = null;
+      }
+    }
 
     // If images provided, delete old and create new
     if (images) {
@@ -504,6 +592,8 @@ router.put('/:id', authRequired, async (req: AuthRequest, res: Response, next) =
         ...(longitude !== undefined && { longitude: longitude ? parseFloat(longitude) : null }),
         ...(categoryId && { categoryId }),
         ...(attributesData !== undefined && { attributes: attributesData }),
+        ...(sanitizedVideoUrl !== undefined && { videoUrl: sanitizedVideoUrl }),
+        ...(negotiable !== undefined && { negotiable: negotiable === true }),
         ...(images && {
           images: {
             create: images.map((img: { url: string }, idx: number) => ({

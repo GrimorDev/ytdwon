@@ -10,6 +10,16 @@ import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrum
 import ListingCard from '../components/Listing/ListingCard';
 import { addToViewHistory } from '../utils/viewHistory';
 
+function getEmbedUrl(url: string): string {
+  // YouTube
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  // Vimeo
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  return url;
+}
+
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -409,6 +419,24 @@ export default function ListingDetailPage() {
                   {listing.description}
                 </p>
               </div>
+
+              {/* Video embed */}
+              {listing.videoUrl && (
+                <div className="card !p-6 mt-4">
+                  <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    🎬 {lang === 'pl' ? 'Film' : 'Video'}
+                  </h2>
+                  <div className="aspect-video rounded-xl overflow-hidden bg-black">
+                    <iframe
+                      src={getEmbedUrl(listing.videoUrl)}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title="Video"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -418,10 +446,15 @@ export default function ListingDetailPage() {
               {/* Title + Price Card */}
               <div className="card !p-6">
                 {/* Condition badge */}
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${conditionColor(listing.condition)}`}>
                     {conditionLabel(listing.condition)}
                   </span>
+                  {listing.negotiable && (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                      {lang === 'pl' ? 'Do negocjacji' : 'Negotiable'}
+                    </span>
+                  )}
                   {listing.category && (
                     <Link
                       to={`/kategoria/${listing.category.slug}`}
@@ -771,6 +804,22 @@ export default function ListingDetailPage() {
               {listing.description}
             </p>
           </div>
+
+          {/* Video - mobile */}
+          {listing.videoUrl && (
+            <div className="card !p-6">
+              <h2 className="text-lg font-bold mb-4">🎬 {lang === 'pl' ? 'Film' : 'Video'}</h2>
+              <div className="aspect-video rounded-xl overflow-hidden bg-black">
+                <iframe
+                  src={getEmbedUrl(listing.videoUrl)}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Video"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Seller's other listings */}

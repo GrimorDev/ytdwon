@@ -80,8 +80,10 @@ export const listingsApi = {
         });
       }
     }
-    return api.get<PaginatedResponse<Listing>>(`/listings?${searchParams.toString()}`);
+    return api.get<PaginatedResponse<Listing> & { promotedListings: Listing[] }>(`/listings?${searchParams.toString()}`);
   },
+  getPromoted: (limit = 8) =>
+    api.get<{ listings: Listing[] }>(`/listings/promoted?limit=${limit}`),
   autocomplete: (q: string, limit = 6) =>
     api.get<{ suggestions: AutocompleteSuggestion[] }>(`/listings/autocomplete?q=${encodeURIComponent(q)}&limit=${limit}`),
   getMy: (status?: string) =>
