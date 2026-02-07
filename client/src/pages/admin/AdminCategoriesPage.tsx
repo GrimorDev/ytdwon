@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   FolderTree, Plus, Pencil, Trash2, Upload, ChevronDown, ChevronRight,
-  Package, Image as ImageIcon, Globe, X, AlertCircle, CheckCircle, Loader2,
-  GripVertical, Link as LinkIcon,
+  Package, Globe, X, AlertCircle, CheckCircle, Loader2,
+  ArrowUp, ArrowDown, Link as LinkIcon,
 } from 'lucide-react';
 import { adminApi } from '../../services/api';
 import type { Category } from '../../types';
@@ -32,6 +32,46 @@ const emptyForm: CategoryFormData = {
   image: null,
 };
 
+// Collect all categories with level for parent selection (flat list)
+function flattenForSelect(categories: Category[], prefix = '', excludeId?: string): Array<{ id: string; name: string; depth: number }> {
+  const result: Array<{ id: string; name: string; depth: number }> = [];
+  for (const cat of categories) {
+    if (cat.id === excludeId) continue;
+    const depth = prefix ? prefix.split(' > ').length : 0;
+    // Only allow nesting up to 2 levels deep (max depth=1 can be parent)
+    if (depth < 2) {
+      result.push({ id: cat.id, name: prefix ? `${prefix} > ${cat.namePl}` : cat.namePl, depth });
+    }
+    if (cat.children && cat.children.length > 0) {
+      const childResults = flattenForSelect(cat.children, prefix ? `${prefix} > ${cat.namePl}` : cat.namePl, excludeId);
+      result.push(...childResults);
+    }
+  }
+  return result;
+}
+
+// Recursively count all nested categories
+function countAll(categories: Category[]): number {
+  let count = 0;
+  for (const cat of categories) {
+    count += 1;
+    if (cat.children) count += countAll(cat.children);
+  }
+  return count;
+}
+
+// Find a category by ID in the tree
+function findCatById(categories: Category[], id: string): Category | null {
+  for (const cat of categories) {
+    if (cat.id === id) return cat;
+    if (cat.children) {
+      const found = findCatById(cat.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +89,9 @@ export default function AdminCategoriesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // Reorder loading
+  const [reordering, setReordering] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,9 +121,15 @@ export default function AdminCategoriesPage() {
 
   const expandAll = () => {
     const allIds = new Set<string>();
-    categories.forEach(c => {
-      if (c.children && c.children.length > 0) allIds.add(c.id);
-    });
+    const collectExpandable = (cats: Category[]) => {
+      cats.forEach(c => {
+        if (c.children && c.children.length > 0) {
+          allIds.add(c.id);
+          collectExpandable(c.children);
+        }
+      });
+    };
+    collectExpandable(categories);
     setExpanded(allIds);
   };
 
@@ -173,24 +222,46 @@ export default function AdminCategoriesPage() {
 
   // Find category name by ID (for delete confirmation)
   const findCategoryName = (id: string): string => {
-    for (const cat of categories) {
-      if (cat.id === id) return cat.namePl;
-      if (cat.children) {
-        for (const sub of cat.children) {
-          if (sub.id === id) return sub.namePl;
-        }
-      }
-    }
-    return '';
+    const cat = findCatById(categories, id);
+    return cat?.namePl || '';
   };
 
-  // Get all parent categories for select
-  const parentOptions = categories.map(c => ({ id: c.id, name: c.namePl }));
+  // Move category up/down among its siblings
+  const moveCategory = async (id: string, direction: 'up' | 'down', siblings: Category[]) => {
+    const idx = siblings.findIndex(s => s.id === id);
+    if (idx === -1) return;
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === siblings.length - 1) return;
+
+    setReordering(true);
+    try {
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+
+      // Build new order for all siblings
+      const newOrder = siblings.map((s, i) => ({
+        id: s.id,
+        order: i,
+      }));
+
+      // Swap the two
+      const temp = newOrder[idx].order;
+      newOrder[idx].order = newOrder[swapIdx].order;
+      newOrder[swapIdx].order = temp;
+
+      await adminApi.reorderCategories(newOrder);
+      await fetchCategories();
+    } catch {
+      // silent fail
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  // Get all parent options for select (flat with indentation)
+  const parentOptions = flattenForSelect(categories, '', editingId || undefined);
 
   // Count total categories
-  const totalCategories = categories.reduce(
-    (sum, c) => sum + 1 + (c.children?.length || 0), 0
-  );
+  const totalCategories = countAll(categories);
 
   if (loading) {
     return (
@@ -252,15 +323,19 @@ export default function AdminCategoriesPage() {
             </button>
           </div>
         ) : (
-          categories.map(cat => (
+          categories.map((cat, idx) => (
             <CategoryTreeItem
               key={cat.id}
               category={cat}
+              siblings={categories}
+              index={idx}
               expanded={expanded}
               toggleExpand={toggleExpand}
               onEdit={openEditModal}
               onDelete={setDeleteId}
               onAddSub={(parentId) => openAddModal(parentId)}
+              onMove={moveCategory}
+              reordering={reordering}
             />
           ))
         )}
@@ -333,7 +408,7 @@ export default function AdminCategoriesPage() {
                 </div>
               </div>
 
-              {/* Parent category (only for subcategories) */}
+              {/* Parent category */}
               <div>
                 <label className="block text-sm font-medium mb-1">Kategoria nadrzedna</label>
                 <select
@@ -342,13 +417,13 @@ export default function AdminCategoriesPage() {
                   className="input-field"
                 >
                   <option value="">-- Kategoria glowna --</option>
-                  {parentOptions
-                    .filter(p => p.id !== editingId)
-                    .map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))
-                  }
+                  {parentOptions.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {'  '.repeat(p.depth)}{p.depth > 0 ? '└ ' : ''}{p.name.split(' > ').pop()}
+                    </option>
+                  ))}
                 </select>
+                <p className="text-xs text-gray-400 mt-1">Max 3 poziomy zaglebienia</p>
               </div>
 
               {/* Image upload */}
@@ -511,30 +586,44 @@ function slugify(name: string): string {
 // Tree item component
 function CategoryTreeItem({
   category,
+  siblings,
+  index,
   expanded,
   toggleExpand,
   onEdit,
   onDelete,
   onAddSub,
+  onMove,
+  reordering,
   depth = 0,
 }: {
   category: Category;
+  siblings: Category[];
+  index: number;
   expanded: Set<string>;
   toggleExpand: (id: string) => void;
   onEdit: (cat: Category) => void;
   onDelete: (id: string) => void;
   onAddSub: (parentId: string) => void;
+  onMove: (id: string, direction: 'up' | 'down', siblings: Category[]) => void;
+  reordering: boolean;
   depth?: number;
 }) {
   const hasChildren = category.children && category.children.length > 0;
   const isExpanded = expanded.has(category.id);
   const listingCount = category._count?.listings || 0;
+  const isFirst = index === 0;
+  const isLast = index === siblings.length - 1;
+
+  const depthColors = [
+    '',
+    'ml-8 border-l-4 border-l-primary-200 dark:border-l-primary-800',
+    'ml-8 border-l-4 border-l-amber-200 dark:border-l-amber-800',
+  ];
 
   return (
     <div>
-      <div
-        className={`card !p-0 overflow-hidden ${depth > 0 ? 'ml-8 border-l-4 border-l-primary-200 dark:border-l-primary-800' : ''}`}
-      >
+      <div className={`card !p-0 overflow-hidden ${depthColors[depth] || depthColors[2]}`}>
         <div className="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-dark-600 transition-colors">
           {/* Expand toggle */}
           <button
@@ -566,7 +655,7 @@ function CategoryTreeItem({
               <span className="font-semibold text-sm truncate">{category.namePl}</span>
               <span className="text-xs text-gray-400 truncate">/ {category.nameEn}</span>
             </div>
-            <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
+            <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500 flex-wrap">
               <span className="flex items-center gap-1">
                 <LinkIcon className="w-3 h-3" />
                 /{category.slug}
@@ -578,12 +667,36 @@ function CategoryTreeItem({
               <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-dark-500 rounded">
                 {category.icon}
               </span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded">
+                #{category.displayOrder ?? 0}
+              </span>
             </div>
+          </div>
+
+          {/* Reorder buttons */}
+          <div className="flex flex-col gap-0.5">
+            <button
+              onClick={() => onMove(category.id, 'up', siblings)}
+              disabled={isFirst || reordering}
+              className={`p-1 rounded transition-colors ${isFirst ? 'opacity-20 cursor-default' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-dark-500'}`}
+              title="W gore"
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => onMove(category.id, 'down', siblings)}
+              disabled={isLast || reordering}
+              className={`p-1 rounded transition-colors ${isLast ? 'opacity-20 cursor-default' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-dark-500'}`}
+              title="W dol"
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+            </button>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-1">
-            {depth === 0 && (
+            {/* Allow adding subcategory up to depth 1 (so max 3 levels total) */}
+            {depth < 2 && (
               <button
                 onClick={() => onAddSub(category.id)}
                 className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
@@ -613,15 +726,19 @@ function CategoryTreeItem({
       {/* Children */}
       {hasChildren && isExpanded && (
         <div className="space-y-2 mt-2">
-          {category.children!.map(sub => (
+          {category.children!.map((sub, subIdx) => (
             <CategoryTreeItem
               key={sub.id}
               category={sub}
+              siblings={category.children!}
+              index={subIdx}
               expanded={expanded}
               toggleExpand={toggleExpand}
               onEdit={onEdit}
               onDelete={onDelete}
               onAddSub={onAddSub}
+              onMove={onMove}
+              reordering={reordering}
               depth={depth + 1}
             />
           ))}

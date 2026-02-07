@@ -262,6 +262,8 @@ export const adminApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   deleteCategory: (id: string) => api.delete(`/admin/categories/${id}`),
+  reorderCategories: (categories: Array<{ id: string; order: number }>) =>
+    api.patch('/admin/categories/reorder', { categories }),
   uploadCategoryImage: (id: string, file: File) => {
     const formData = new FormData();
     formData.append('image', file);

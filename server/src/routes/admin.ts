@@ -622,7 +622,7 @@ function translateToEn(namePl: string): string {
   return namePl.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-// List all categories (tree) for admin
+// List all categories (tree, 3 levels deep) for admin
 router.get('/categories', adminRequired, async (_req: AuthRequest, res: Response, next) => {
   try {
     const categories = await prisma.category.findMany({
@@ -630,13 +630,19 @@ router.get('/categories', adminRequired, async (_req: AuthRequest, res: Response
       include: {
         children: {
           include: {
+            children: {
+              include: {
+                _count: { select: { listings: true } },
+              },
+              orderBy: { displayOrder: 'asc' },
+            },
             _count: { select: { listings: true } },
           },
-          orderBy: { name: 'asc' },
+          orderBy: { displayOrder: 'asc' },
         },
         _count: { select: { listings: true } },
       },
-      orderBy: { name: 'asc' },
+      orderBy: { displayOrder: 'asc' },
     });
 
     res.json({ categories });
@@ -675,6 +681,13 @@ router.post('/categories', adminRequired, categoryUpload.single('image'), async 
       imageUrl = `/uploads/${filename}`;
     }
 
+    // Auto displayOrder — put at end of siblings
+    const maxOrder = await prisma.category.aggregate({
+      where: { parentId: parentId || null },
+      _max: { displayOrder: true },
+    });
+    const displayOrder = (maxOrder._max.displayOrder ?? -1) + 1;
+
     const category = await prisma.category.create({
       data: {
         name: namePl.trim(),
@@ -683,6 +696,7 @@ router.post('/categories', adminRequired, categoryUpload.single('image'), async 
         icon: (icon && icon.trim()) ? icon.trim() : 'Package',
         slug,
         imageUrl,
+        displayOrder,
         parentId: parentId || null,
       },
       include: {
@@ -735,6 +749,9 @@ router.put('/categories/:id', adminRequired, categoryUpload.single('image'), asy
     if (icon !== undefined) data.icon = icon.trim() || existing.icon;
     if (parentId !== undefined) data.parentId = parentId || null;
 
+    const { displayOrder: dOrder } = req.body;
+    if (dOrder !== undefined) data.displayOrder = parseInt(dOrder);
+
     // Process image if uploaded
     if (req.file) {
       const filename = `cat-${uuidv4()}.webp`;
@@ -761,7 +778,13 @@ router.put('/categories/:id', adminRequired, categoryUpload.single('image'), asy
       where: { id: req.params.id as string },
       data,
       include: {
-        children: { include: { _count: { select: { listings: true } } } },
+        children: {
+          include: {
+            children: { include: { _count: { select: { listings: true } } } },
+            _count: { select: { listings: true } },
+          },
+          orderBy: { displayOrder: 'asc' },
+        },
         parent: true,
         _count: { select: { listings: true } },
       },
@@ -833,6 +856,27 @@ router.post('/categories/:id/image', adminRequired, categoryUpload.single('image
     });
 
     res.json({ imageUrl: category.imageUrl });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Reorder categories
+router.patch('/categories/reorder', adminRequired, async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { categories: catOrders } = req.body;
+    if (!Array.isArray(catOrders)) throw new AppError(400, 'Invalid categories data');
+
+    await Promise.all(
+      catOrders.map((c: { id: string; order: number }) =>
+        prisma.category.update({
+          where: { id: c.id },
+          data: { displayOrder: c.order },
+        })
+      )
+    );
+
+    res.json({ message: 'Order updated' });
   } catch (err) {
     next(err);
   }

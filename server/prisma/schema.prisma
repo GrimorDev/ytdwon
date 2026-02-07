@@ -74,18 +74,21 @@ model User {
 }
 
 model Category {
-  id        String     @id @default(uuid())
-  name      String     @unique
-  namePl    String
-  nameEn    String
-  icon      String
-  slug      String     @unique
-  imageUrl  String?
-  parentId  String?
-  parent    Category?  @relation("subcategories", fields: [parentId], references: [id])
-  children  Category[] @relation("subcategories")
-  listings  Listing[]
-  createdAt DateTime   @default(now())
+  id           String     @id @default(uuid())
+  name         String     @unique
+  namePl       String
+  nameEn       String
+  icon         String
+  slug         String     @unique
+  imageUrl     String?
+  displayOrder Int        @default(0)
+  parentId     String?
+  parent       Category?  @relation("subcategories", fields: [parentId], references: [id])
+  children     Category[] @relation("subcategories")
+  listings     Listing[]
+  createdAt    DateTime   @default(now())
+
+  @@index([parentId, displayOrder])
 }
 
 model Listing {

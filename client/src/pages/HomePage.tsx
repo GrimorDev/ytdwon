@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, TrendingUp, Shield, Zap, Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal, Star, Plus } from 'lucide-react';
+import {
+  ArrowRight, TrendingUp, Shield, Zap, Star, Plus,
+  Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal,
+  Package, Monitor, ShoppingBag, PawPrint, BookOpen, Music, Camera, Wrench, Bike, Gem, Watch,
+  Gamepad2, Tv, Headphones, Printer, Cpu, Heart, TreePine, Flower2, Palette, Scissors, UtensilsCrossed,
+} from 'lucide-react';
 import { categoriesApi, listingsApi } from '../services/api';
 import type { Category, Listing } from '../types';
 import ListingCard from '../components/Listing/ListingCard';
@@ -9,7 +14,9 @@ import SearchAutocomplete from '../components/Search/SearchAutocomplete';
 import BannerSlider from '../components/Home/BannerSlider';
 
 const iconMap: Record<string, any> = {
-  Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal
+  Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal,
+  Package, Monitor, ShoppingBag, PawPrint, BookOpen, Music, Camera, Wrench, Bike, Gem, Watch,
+  Gamepad2, Tv, Headphones, Printer, Cpu, Heart, TreePine, Flower2, Palette, Scissors, UtensilsCrossed,
 };
 
 export default function HomePage() {
@@ -61,9 +68,15 @@ export default function HomePage() {
                 to={`/kategoria/${cat.slug}`}
                 className="card-hover p-4 flex flex-col items-center gap-2 text-center group"
               >
-                <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 transition-colors">
-                  {getCategoryIcon(cat.icon)}
-                </div>
+                {cat.imageUrl ? (
+                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
+                    <img src={cat.imageUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 transition-colors">
+                    {getCategoryIcon(cat.icon)}
+                  </div>
+                )}
                 <span className="text-sm font-medium">{lang === 'pl' ? cat.namePl : cat.nameEn}</span>
               </Link>
             ))}

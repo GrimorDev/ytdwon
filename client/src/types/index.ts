@@ -26,6 +26,7 @@ export interface Category {
   icon: string;
   slug: string;
   imageUrl?: string;
+  displayOrder?: number;
   parentId?: string;
   parent?: Category;
   children?: Category[];

@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const router = Router();
 const prisma = new PrismaClient();
 
-// Get all categories (tree)
+// Get all categories (tree, 3 levels deep)
 router.get('/', async (_req: Request, res: Response, next) => {
   try {
     const categories = await prisma.category.findMany({
@@ -12,13 +12,19 @@ router.get('/', async (_req: Request, res: Response, next) => {
       include: {
         children: {
           include: {
+            children: {
+              include: {
+                _count: { select: { listings: true } },
+              },
+              orderBy: { displayOrder: 'asc' },
+            },
             _count: { select: { listings: true } },
           },
-          orderBy: { name: 'asc' },
+          orderBy: { displayOrder: 'asc' },
         },
         _count: { select: { listings: true } },
       },
-      orderBy: { name: 'asc' },
+      orderBy: { displayOrder: 'asc' },
     });
 
     res.json({ categories });
@@ -36,10 +42,21 @@ router.get('/:slug', async (req: Request, res: Response, next) => {
       include: {
         children: {
           include: {
+            children: {
+              include: {
+                _count: { select: { listings: true } },
+              },
+              orderBy: { displayOrder: 'asc' },
+            },
             _count: { select: { listings: true } },
           },
+          orderBy: { displayOrder: 'asc' },
         },
-        parent: true,
+        parent: {
+          include: {
+            parent: true,
+          },
+        },
         _count: { select: { listings: true } },
       },
     });
