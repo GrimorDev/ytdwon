@@ -25,6 +25,7 @@ export interface Category {
   nameEn: string;
   icon: string;
   slug: string;
+  imageUrl?: string;
   parentId?: string;
   parent?: Category;
   children?: Category[];
@@ -194,6 +195,7 @@ export interface AdminStats {
   totalReports: number;
   totalBanners: number;
   totalSubscribers: number;
+  totalCategories: number;
 }
 
 export interface AdminUser {

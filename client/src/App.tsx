@@ -21,6 +21,7 @@ import AdminListingsPage from './pages/admin/AdminListingsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
 import AdminBannersPage from './pages/admin/AdminBannersPage';
+import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import AdminLayout from './components/Admin/AdminLayout';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="listings" element={<AdminListingsPage />} />
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="reports" element={<AdminReportsPage />} />
+        <Route path="categories" element={<AdminCategoriesPage />} />
         <Route path="banners" element={<AdminBannersPage />} />
       </Route>
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Users, Flag, Activity, TrendingUp, AlertCircle, Image, Mail } from 'lucide-react';
+import { ShoppingBag, Users, Flag, Activity, TrendingUp, AlertCircle, Image, Mail, FolderTree } from 'lucide-react';
 import { adminApi } from '../../services/api';
 import type { AdminStats } from '../../types';
 
@@ -68,6 +68,14 @@ export default function AdminDashboardPage() {
       highlight: stats.pendingReports > 0,
     },
     {
+      label: 'Kategorie',
+      value: stats.totalCategories,
+      icon: FolderTree,
+      color: 'bg-amber-500',
+      lightBg: 'bg-amber-50 dark:bg-amber-900/20',
+      link: '/a-panel/categories',
+    },
+    {
       label: 'Bannery',
       value: stats.totalBanners,
       icon: Image,
@@ -95,7 +103,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(card => (
           <Link
             key={card.label}
@@ -151,6 +159,10 @@ export default function AdminDashboardPage() {
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">Kategorie</span>
+              <span className="font-semibold">{stats.totalCategories}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">Aktywne bannery</span>
               <span className="font-semibold">{stats.totalBanners}</span>
             </div>
@@ -184,6 +196,12 @@ export default function AdminDashboardPage() {
               className="block p-3 rounded-xl border border-gray-200 dark:border-dark-500 hover:bg-gray-50 dark:hover:bg-dark-600 transition-all text-sm"
             >
               Zarzadzaj ogloszeniami ({stats.totalListings})
+            </Link>
+            <Link
+              to="/a-panel/categories"
+              className="block p-3 rounded-xl border border-gray-200 dark:border-dark-500 hover:bg-gray-50 dark:hover:bg-dark-600 transition-all text-sm"
+            >
+              Zarzadzaj kategoriami ({stats.totalCategories})
             </Link>
             <Link
               to="/a-panel/banners"

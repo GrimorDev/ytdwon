@@ -250,6 +250,25 @@ export const adminApi = {
     return api.get<{ subscribers: NewsletterSubscriber[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>(`/admin/newsletter?${sp.toString()}`);
   },
   deleteSubscriber: (id: string) => api.delete(`/admin/newsletter/${id}`),
+
+  // Categories
+  getCategories: () => api.get<{ categories: Category[] }>('/admin/categories'),
+  createCategory: (data: FormData) =>
+    api.post<{ category: Category }>('/admin/categories', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  updateCategory: (id: string, data: FormData) =>
+    api.put<{ category: Category }>(`/admin/categories/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  deleteCategory: (id: string) => api.delete(`/admin/categories/${id}`),
+  uploadCategoryImage: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post<{ imageUrl: string }>(`/admin/categories/${id}/image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // Public: Banners

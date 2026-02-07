@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, Users, Flag, LogOut, Menu, X, Image } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Users, Flag, LogOut, Menu, X, Image, FolderTree } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useState } from 'react';
 
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/a-panel/listings', icon: ShoppingBag, label: 'Ogloszenia', end: false },
   { to: '/a-panel/users', icon: Users, label: 'Uzytkownicy', end: false },
   { to: '/a-panel/reports', icon: Flag, label: 'Zgloszenia', end: false },
+  { to: '/a-panel/categories', icon: FolderTree, label: 'Kategorie', end: false },
   { to: '/a-panel/banners', icon: Image, label: 'Bannery', end: false },
 ];
 
