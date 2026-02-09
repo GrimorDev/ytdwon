@@ -23,6 +23,8 @@ export interface Category {
   name: string;
   namePl: string;
   nameEn: string;
+  descriptionPl?: string;
+  descriptionEn?: string;
   icon: string;
   slug: string;
   imageUrl?: string;

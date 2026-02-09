@@ -3,11 +3,15 @@ import { useSearchParams, useParams, Link } from 'react-router-dom';
 import {
   SlidersHorizontal, Grid3X3, List, X, ChevronRight, ChevronDown, ChevronUp,
   Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal,
-  MapPin, Search, Heart, Bell, Star
+  MapPin, Search, Heart, Bell, Star,
+  Package, Monitor, ShoppingBag, PawPrint, BookOpen, Music, Camera, Wrench, Bike, Gem, Watch,
+  Gamepad2, Tv, Headphones, Printer, Cpu, TreePine, Flower2, Palette, Scissors, UtensilsCrossed,
 } from 'lucide-react';
 
 const iconMap: Record<string, any> = {
-  Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal
+  Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal,
+  Package, Monitor, ShoppingBag, PawPrint, BookOpen, Music, Camera, Wrench, Bike, Gem, Watch,
+  Gamepad2, Tv, Headphones, Printer, Cpu, Heart, TreePine, Flower2, Palette, Scissors, UtensilsCrossed,
 };
 import { listingsApi, categoriesApi } from '../services/api';
 import type { Listing, Category } from '../types';
@@ -348,6 +352,15 @@ export default function ListingsPage() {
         <Breadcrumbs items={getBreadcrumbItems()} />
       </div>
 
+      {/* Category description */}
+      {currentCategory && (lang === 'pl' ? currentCategory.descriptionPl : currentCategory.descriptionEn) && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-dark-600 rounded-xl">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {lang === 'pl' ? currentCategory.descriptionPl : currentCategory.descriptionEn}
+          </p>
+        </div>
+      )}
+
       {/* Parent category landing - Big subcategory tiles */}
       {isParentCategory && (
         <div className="mb-10">
@@ -361,9 +374,15 @@ export default function ListingsPage() {
                 to={`/kategoria/${sub.slug}`}
                 className="card-hover p-6 flex items-center gap-4 group"
               >
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:from-primary-100 group-hover:to-primary-200 dark:group-hover:from-primary-900/50 dark:group-hover:to-primary-800/50 transition-colors">
-                  {getCategoryIcon(sub.icon)}
-                </div>
+                {sub.imageUrl ? (
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0">
+                    <img src={sub.imageUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:from-primary-100 group-hover:to-primary-200 dark:group-hover:from-primary-900/50 dark:group-hover:to-primary-800/50 transition-colors">
+                    {getCategoryIcon(sub.icon)}
+                  </div>
+                )}
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                     {lang === 'pl' ? sub.namePl : sub.nameEn}

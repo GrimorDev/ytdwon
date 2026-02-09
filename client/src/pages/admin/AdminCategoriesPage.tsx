@@ -19,17 +19,23 @@ const ICON_OPTIONS = [
 interface CategoryFormData {
   namePl: string;
   nameEn: string;
+  descriptionPl: string;
+  descriptionEn: string;
   icon: string;
   parentId: string;
   image: File | null;
+  existingImageUrl: string;
 }
 
 const emptyForm: CategoryFormData = {
   namePl: '',
   nameEn: '',
+  descriptionPl: '',
+  descriptionEn: '',
   icon: 'Package',
   parentId: '',
   image: null,
+  existingImageUrl: '',
 };
 
 // Collect all categories with level for parent selection (flat list)
@@ -147,9 +153,12 @@ export default function AdminCategoriesPage() {
     setForm({
       namePl: cat.namePl,
       nameEn: cat.nameEn,
+      descriptionPl: cat.descriptionPl || '',
+      descriptionEn: cat.descriptionEn || '',
       icon: cat.icon,
       parentId: cat.parentId || '',
       image: null,
+      existingImageUrl: cat.imageUrl || '',
     });
     setEditingId(cat.id);
     setError('');
@@ -178,6 +187,8 @@ export default function AdminCategoriesPage() {
       const formData = new FormData();
       formData.append('namePl', form.namePl.trim());
       if (form.nameEn.trim()) formData.append('nameEn', form.nameEn.trim());
+      formData.append('descriptionPl', form.descriptionPl.trim());
+      formData.append('descriptionEn', form.descriptionEn.trim());
       formData.append('icon', form.icon);
       if (form.parentId) formData.append('parentId', form.parentId);
       if (form.image) formData.append('image', form.image);
@@ -386,6 +397,36 @@ export default function AdminCategoriesPage() {
                 </div>
               </div>
 
+              {/* Description PL */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Opis (PL)
+                  <span className="text-gray-400 font-normal ml-1">- opcjonalny, widoczny na stronie kategorii</span>
+                </label>
+                <textarea
+                  value={form.descriptionPl}
+                  onChange={e => setForm(f => ({ ...f, descriptionPl: e.target.value }))}
+                  placeholder="Np. Znajdz najlepsze oferty elektroniki..."
+                  className="input-field resize-none"
+                  rows={2}
+                />
+              </div>
+
+              {/* Description EN */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Opis (EN)
+                  <span className="text-gray-400 font-normal ml-1">- opcjonalny</span>
+                </label>
+                <textarea
+                  value={form.descriptionEn}
+                  onChange={e => setForm(f => ({ ...f, descriptionEn: e.target.value }))}
+                  placeholder="E.g. Find the best electronics deals..."
+                  className="input-field resize-none"
+                  rows={2}
+                />
+              </div>
+
               {/* Icon selector */}
               <div>
                 <label className="block text-sm font-medium mb-1">Ikona</label>
@@ -445,6 +486,22 @@ export default function AdminCategoriesPage() {
                         <X className="w-3 h-3" />
                       </button>
                     </div>
+                  ) : form.existingImageUrl ? (
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200 dark:border-dark-500">
+                      <img
+                        src={form.existingImageUrl}
+                        alt="Current"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                        title="Zmien obrazek"
+                      >
+                        <Upload className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
                   ) : (
                     <button
                       type="button"
@@ -457,6 +514,9 @@ export default function AdminCategoriesPage() {
                   <div className="text-xs text-gray-500">
                     <p>JPG, PNG, WebP</p>
                     <p>Max 5MB, 400x400px</p>
+                    {form.existingImageUrl && !form.image && (
+                      <p className="text-green-600 dark:text-green-400">Obecny obrazek zapisany</p>
+                    )}
                   </div>
                 </div>
                 <input

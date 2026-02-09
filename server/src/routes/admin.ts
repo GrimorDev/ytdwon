@@ -654,7 +654,7 @@ router.get('/categories', adminRequired, async (_req: AuthRequest, res: Response
 // Create category
 router.post('/categories', adminRequired, categoryUpload.single('image'), async (req: AuthRequest, res: Response, next) => {
   try {
-    const { namePl, nameEn, icon, parentId } = req.body;
+    const { namePl, nameEn, descriptionPl, descriptionEn, icon, parentId } = req.body;
 
     if (!namePl || !namePl.trim()) throw new AppError(400, 'Polish name is required');
 
@@ -693,6 +693,8 @@ router.post('/categories', adminRequired, categoryUpload.single('image'), async 
         name: namePl.trim(),
         namePl: namePl.trim(),
         nameEn: finalNameEn,
+        descriptionPl: (descriptionPl && descriptionPl.trim()) ? descriptionPl.trim() : null,
+        descriptionEn: (descriptionEn && descriptionEn.trim()) ? descriptionEn.trim() : null,
         icon: (icon && icon.trim()) ? icon.trim() : 'Package',
         slug,
         imageUrl,
@@ -718,7 +720,7 @@ router.put('/categories/:id', adminRequired, categoryUpload.single('image'), asy
     const existing = await prisma.category.findUnique({ where: { id: req.params.id as string } });
     if (!existing) throw new AppError(404, 'Category not found');
 
-    const { namePl, nameEn, icon, parentId } = req.body;
+    const { namePl, nameEn, descriptionPl, descriptionEn, icon, parentId } = req.body;
 
     const data: any = {};
 
@@ -745,6 +747,9 @@ router.put('/categories/:id', adminRequired, categoryUpload.single('image'), asy
     } else if (namePl && namePl.trim() !== existing.namePl) {
       data.nameEn = translateToEn(namePl.trim());
     }
+
+    if (descriptionPl !== undefined) data.descriptionPl = descriptionPl.trim() || null;
+    if (descriptionEn !== undefined) data.descriptionEn = descriptionEn.trim() || null;
 
     if (icon !== undefined) data.icon = icon.trim() || existing.icon;
     if (parentId !== undefined) data.parentId = parentId || null;
