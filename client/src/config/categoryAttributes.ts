@@ -19,7 +19,26 @@ export interface AttributeDefinition {
 }
 
 export const CATEGORY_ATTRIBUTES: Record<string, AttributeDefinition[]> = {
-  // ========== ELEKTRONIKA ==========
+  // ========== ELEKTRONIKA (parent) ==========
+  elektronika: [
+    {
+      key: 'brand', type: 'text', labelPl: 'Marka', labelEn: 'Brand',
+      required: false, filterable: true, showOnCard: true,
+    },
+    {
+      key: 'condition_detail', type: 'select', labelPl: 'Stan szczegolowy', labelEn: 'Detailed condition',
+      required: false, filterable: true, showOnCard: false,
+      options: [
+        { value: 'sealed', labelPl: 'Fabrycznie nowy', labelEn: 'Factory sealed' },
+        { value: 'likenew', labelPl: 'Jak nowy', labelEn: 'Like new' },
+        { value: 'good', labelPl: 'Dobry', labelEn: 'Good' },
+        { value: 'fair', labelPl: 'Dostateczny', labelEn: 'Fair' },
+        { value: 'forparts', labelPl: 'Na czesci', labelEn: 'For parts' },
+      ],
+    },
+  ],
+
+  // ========== ELEKTRONIKA - subkategorie ==========
   telefony: [
     {
       key: 'brand', type: 'select', labelPl: 'Marka', labelEn: 'Brand',
@@ -154,7 +173,41 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttributeDefinition[]> = {
     },
   ],
 
-  // ========== MOTORYZACJA ==========
+  // ========== MOTORYZACJA (parent) ==========
+  motoryzacja: [
+    {
+      key: 'make', type: 'select', labelPl: 'Marka', labelEn: 'Make',
+      required: false, filterable: true, showOnCard: true,
+      options: [
+        { value: 'audi', labelPl: 'Audi', labelEn: 'Audi' },
+        { value: 'bmw', labelPl: 'BMW', labelEn: 'BMW' },
+        { value: 'ford', labelPl: 'Ford', labelEn: 'Ford' },
+        { value: 'honda', labelPl: 'Honda', labelEn: 'Honda' },
+        { value: 'hyundai', labelPl: 'Hyundai', labelEn: 'Hyundai' },
+        { value: 'kia', labelPl: 'Kia', labelEn: 'Kia' },
+        { value: 'mercedes', labelPl: 'Mercedes-Benz', labelEn: 'Mercedes-Benz' },
+        { value: 'opel', labelPl: 'Opel', labelEn: 'Opel' },
+        { value: 'skoda', labelPl: 'Skoda', labelEn: 'Skoda' },
+        { value: 'toyota', labelPl: 'Toyota', labelEn: 'Toyota' },
+        { value: 'volkswagen', labelPl: 'Volkswagen', labelEn: 'Volkswagen' },
+        { value: 'other', labelPl: 'Inna', labelEn: 'Other' },
+      ],
+    },
+    { key: 'year', type: 'number', labelPl: 'Rok produkcji', labelEn: 'Year', required: false, filterable: true, showOnCard: true, min: 1990, max: 2026 },
+    { key: 'mileage', type: 'number', labelPl: 'Przebieg', labelEn: 'Mileage', required: false, filterable: true, showOnCard: true, unit: 'km' },
+    {
+      key: 'fuelType', type: 'select', labelPl: 'Paliwo', labelEn: 'Fuel type',
+      required: false, filterable: true, showOnCard: true,
+      options: [
+        { value: 'petrol', labelPl: 'Benzyna', labelEn: 'Petrol' },
+        { value: 'diesel', labelPl: 'Diesel', labelEn: 'Diesel' },
+        { value: 'lpg', labelPl: 'LPG', labelEn: 'LPG' },
+        { value: 'electric', labelPl: 'Elektryczny', labelEn: 'Electric' },
+        { value: 'hybrid', labelPl: 'Hybryda', labelEn: 'Hybrid' },
+      ],
+    },
+  ],
+
   samochody: [
     {
       key: 'make', type: 'select', labelPl: 'Marka', labelEn: 'Make',
@@ -219,6 +272,104 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttributeDefinition[]> = {
       ],
     },
     { key: 'power', type: 'number', labelPl: 'Moc', labelEn: 'Power', required: false, filterable: true, showOnCard: false, unit: 'KM' },
+    {
+      key: 'color', type: 'select', labelPl: 'Kolor', labelEn: 'Color',
+      required: false, filterable: true, showOnCard: false,
+      options: [
+        { value: 'black', labelPl: 'Czarny', labelEn: 'Black' },
+        { value: 'white', labelPl: 'Bialy', labelEn: 'White' },
+        { value: 'silver', labelPl: 'Srebrny', labelEn: 'Silver' },
+        { value: 'gray', labelPl: 'Szary', labelEn: 'Gray' },
+        { value: 'red', labelPl: 'Czerwony', labelEn: 'Red' },
+        { value: 'blue', labelPl: 'Niebieski', labelEn: 'Blue' },
+        { value: 'green', labelPl: 'Zielony', labelEn: 'Green' },
+        { value: 'brown', labelPl: 'Brazowy', labelEn: 'Brown' },
+        { value: 'beige', labelPl: 'Bezowy', labelEn: 'Beige' },
+        { value: 'other', labelPl: 'Inny', labelEn: 'Other' },
+      ],
+    },
+  ],
+
+  // Alias: samochody-osobowe uses same filters as samochody
+  'samochody-osobowe': [
+    {
+      key: 'make', type: 'select', labelPl: 'Marka', labelEn: 'Make',
+      required: false, filterable: true, showOnCard: true,
+      options: [
+        { value: 'audi', labelPl: 'Audi', labelEn: 'Audi' },
+        { value: 'bmw', labelPl: 'BMW', labelEn: 'BMW' },
+        { value: 'citroen', labelPl: 'Citroen', labelEn: 'Citroen' },
+        { value: 'fiat', labelPl: 'Fiat', labelEn: 'Fiat' },
+        { value: 'ford', labelPl: 'Ford', labelEn: 'Ford' },
+        { value: 'honda', labelPl: 'Honda', labelEn: 'Honda' },
+        { value: 'hyundai', labelPl: 'Hyundai', labelEn: 'Hyundai' },
+        { value: 'kia', labelPl: 'Kia', labelEn: 'Kia' },
+        { value: 'mazda', labelPl: 'Mazda', labelEn: 'Mazda' },
+        { value: 'mercedes', labelPl: 'Mercedes-Benz', labelEn: 'Mercedes-Benz' },
+        { value: 'nissan', labelPl: 'Nissan', labelEn: 'Nissan' },
+        { value: 'opel', labelPl: 'Opel', labelEn: 'Opel' },
+        { value: 'peugeot', labelPl: 'Peugeot', labelEn: 'Peugeot' },
+        { value: 'renault', labelPl: 'Renault', labelEn: 'Renault' },
+        { value: 'seat', labelPl: 'Seat', labelEn: 'Seat' },
+        { value: 'skoda', labelPl: 'Skoda', labelEn: 'Skoda' },
+        { value: 'toyota', labelPl: 'Toyota', labelEn: 'Toyota' },
+        { value: 'volkswagen', labelPl: 'Volkswagen', labelEn: 'Volkswagen' },
+        { value: 'volvo', labelPl: 'Volvo', labelEn: 'Volvo' },
+        { value: 'other', labelPl: 'Inna', labelEn: 'Other' },
+      ],
+    },
+    { key: 'model', type: 'text', labelPl: 'Model', labelEn: 'Model', required: false, filterable: false, showOnCard: false },
+    { key: 'year', type: 'number', labelPl: 'Rok produkcji', labelEn: 'Year', required: false, filterable: true, showOnCard: true, min: 1990, max: 2026 },
+    { key: 'mileage', type: 'number', labelPl: 'Przebieg', labelEn: 'Mileage', required: false, filterable: true, showOnCard: true, unit: 'km' },
+    {
+      key: 'fuelType', type: 'select', labelPl: 'Paliwo', labelEn: 'Fuel type',
+      required: false, filterable: true, showOnCard: true,
+      options: [
+        { value: 'petrol', labelPl: 'Benzyna', labelEn: 'Petrol' },
+        { value: 'diesel', labelPl: 'Diesel', labelEn: 'Diesel' },
+        { value: 'lpg', labelPl: 'LPG', labelEn: 'LPG' },
+        { value: 'electric', labelPl: 'Elektryczny', labelEn: 'Electric' },
+        { value: 'hybrid', labelPl: 'Hybryda', labelEn: 'Hybrid' },
+      ],
+    },
+    {
+      key: 'transmission', type: 'select', labelPl: 'Skrzynia biegow', labelEn: 'Transmission',
+      required: false, filterable: true, showOnCard: false,
+      options: [
+        { value: 'manual', labelPl: 'Manualna', labelEn: 'Manual' },
+        { value: 'automatic', labelPl: 'Automatyczna', labelEn: 'Automatic' },
+      ],
+    },
+    {
+      key: 'bodyType', type: 'select', labelPl: 'Nadwozie', labelEn: 'Body type',
+      required: false, filterable: true, showOnCard: false,
+      options: [
+        { value: 'sedan', labelPl: 'Sedan', labelEn: 'Sedan' },
+        { value: 'kombi', labelPl: 'Kombi', labelEn: 'Estate' },
+        { value: 'hatchback', labelPl: 'Hatchback', labelEn: 'Hatchback' },
+        { value: 'suv', labelPl: 'SUV', labelEn: 'SUV' },
+        { value: 'van', labelPl: 'Van', labelEn: 'Van' },
+        { value: 'coupe', labelPl: 'Coupe', labelEn: 'Coupe' },
+        { value: 'cabrio', labelPl: 'Kabriolet', labelEn: 'Convertible' },
+      ],
+    },
+    { key: 'power', type: 'number', labelPl: 'Moc', labelEn: 'Power', required: false, filterable: true, showOnCard: false, unit: 'KM' },
+    {
+      key: 'color', type: 'select', labelPl: 'Kolor', labelEn: 'Color',
+      required: false, filterable: true, showOnCard: false,
+      options: [
+        { value: 'black', labelPl: 'Czarny', labelEn: 'Black' },
+        { value: 'white', labelPl: 'Bialy', labelEn: 'White' },
+        { value: 'silver', labelPl: 'Srebrny', labelEn: 'Silver' },
+        { value: 'gray', labelPl: 'Szary', labelEn: 'Gray' },
+        { value: 'red', labelPl: 'Czerwony', labelEn: 'Red' },
+        { value: 'blue', labelPl: 'Niebieski', labelEn: 'Blue' },
+        { value: 'green', labelPl: 'Zielony', labelEn: 'Green' },
+        { value: 'brown', labelPl: 'Brazowy', labelEn: 'Brown' },
+        { value: 'beige', labelPl: 'Bezowy', labelEn: 'Beige' },
+        { value: 'other', labelPl: 'Inny', labelEn: 'Other' },
+      ],
+    },
   ],
 
   motocykle: [
@@ -360,6 +511,40 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttributeDefinition[]> = {
   ],
 
   // ========== MODA ==========
+  // ========== MODA (parent) ==========
+  moda: [
+    {
+      key: 'size', type: 'select', labelPl: 'Rozmiar', labelEn: 'Size',
+      required: false, filterable: true, showOnCard: true,
+      options: [
+        { value: 'xs', labelPl: 'XS', labelEn: 'XS' },
+        { value: 's', labelPl: 'S', labelEn: 'S' },
+        { value: 'm', labelPl: 'M', labelEn: 'M' },
+        { value: 'l', labelPl: 'L', labelEn: 'L' },
+        { value: 'xl', labelPl: 'XL', labelEn: 'XL' },
+        { value: 'xxl', labelPl: 'XXL', labelEn: 'XXL' },
+      ],
+    },
+    {
+      key: 'color', type: 'select', labelPl: 'Kolor', labelEn: 'Color',
+      required: false, filterable: true, showOnCard: false,
+      options: [
+        { value: 'black', labelPl: 'Czarny', labelEn: 'Black' },
+        { value: 'white', labelPl: 'Bialy', labelEn: 'White' },
+        { value: 'red', labelPl: 'Czerwony', labelEn: 'Red' },
+        { value: 'blue', labelPl: 'Niebieski', labelEn: 'Blue' },
+        { value: 'green', labelPl: 'Zielony', labelEn: 'Green' },
+        { value: 'yellow', labelPl: 'Zolty', labelEn: 'Yellow' },
+        { value: 'pink', labelPl: 'Rozowy', labelEn: 'Pink' },
+        { value: 'brown', labelPl: 'Brazowy', labelEn: 'Brown' },
+        { value: 'gray', labelPl: 'Szary', labelEn: 'Gray' },
+        { value: 'beige', labelPl: 'Bezowy', labelEn: 'Beige' },
+        { value: 'multi', labelPl: 'Wielokolorowy', labelEn: 'Multi-color' },
+      ],
+    },
+    { key: 'brand', type: 'text', labelPl: 'Marka', labelEn: 'Brand', required: false, filterable: false, showOnCard: true },
+  ],
+
   'odziez-damska': [
     {
       key: 'size', type: 'select', labelPl: 'Rozmiar', labelEn: 'Size',
@@ -372,6 +557,22 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttributeDefinition[]> = {
         { value: 'xl', labelPl: 'XL', labelEn: 'XL' },
         { value: 'xxl', labelPl: 'XXL', labelEn: 'XXL' },
         { value: '3xl', labelPl: '3XL', labelEn: '3XL' },
+      ],
+    },
+    {
+      key: 'color', type: 'select', labelPl: 'Kolor', labelEn: 'Color',
+      required: false, filterable: true, showOnCard: false,
+      options: [
+        { value: 'black', labelPl: 'Czarny', labelEn: 'Black' },
+        { value: 'white', labelPl: 'Bialy', labelEn: 'White' },
+        { value: 'red', labelPl: 'Czerwony', labelEn: 'Red' },
+        { value: 'blue', labelPl: 'Niebieski', labelEn: 'Blue' },
+        { value: 'green', labelPl: 'Zielony', labelEn: 'Green' },
+        { value: 'pink', labelPl: 'Rozowy', labelEn: 'Pink' },
+        { value: 'brown', labelPl: 'Brazowy', labelEn: 'Brown' },
+        { value: 'gray', labelPl: 'Szary', labelEn: 'Gray' },
+        { value: 'beige', labelPl: 'Bezowy', labelEn: 'Beige' },
+        { value: 'multi', labelPl: 'Wielokolorowy', labelEn: 'Multi-color' },
       ],
     },
     { key: 'brand', type: 'text', labelPl: 'Marka', labelEn: 'Brand', required: false, filterable: false, showOnCard: true },
@@ -389,6 +590,22 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttributeDefinition[]> = {
         { value: 'xl', labelPl: 'XL', labelEn: 'XL' },
         { value: 'xxl', labelPl: 'XXL', labelEn: 'XXL' },
         { value: '3xl', labelPl: '3XL', labelEn: '3XL' },
+      ],
+    },
+    {
+      key: 'color', type: 'select', labelPl: 'Kolor', labelEn: 'Color',
+      required: false, filterable: true, showOnCard: false,
+      options: [
+        { value: 'black', labelPl: 'Czarny', labelEn: 'Black' },
+        { value: 'white', labelPl: 'Bialy', labelEn: 'White' },
+        { value: 'red', labelPl: 'Czerwony', labelEn: 'Red' },
+        { value: 'blue', labelPl: 'Niebieski', labelEn: 'Blue' },
+        { value: 'green', labelPl: 'Zielony', labelEn: 'Green' },
+        { value: 'pink', labelPl: 'Rozowy', labelEn: 'Pink' },
+        { value: 'brown', labelPl: 'Brazowy', labelEn: 'Brown' },
+        { value: 'gray', labelPl: 'Szary', labelEn: 'Gray' },
+        { value: 'beige', labelPl: 'Bezowy', labelEn: 'Beige' },
+        { value: 'multi', labelPl: 'Wielokolorowy', labelEn: 'Multi-color' },
       ],
     },
     { key: 'brand', type: 'text', labelPl: 'Marka', labelEn: 'Brand', required: false, filterable: false, showOnCard: true },
@@ -887,6 +1104,67 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttributeDefinition[]> = {
     },
   ],
 
+  // ========== TOREBKI ==========
+  torebki: [
+    {
+      key: 'bagType', type: 'select', labelPl: 'Typ', labelEn: 'Type',
+      required: false, filterable: true, showOnCard: true,
+      options: [
+        { value: 'handbag', labelPl: 'Torebka', labelEn: 'Handbag' },
+        { value: 'backpack', labelPl: 'Plecak', labelEn: 'Backpack' },
+        { value: 'clutch', labelPl: 'Kopertowka', labelEn: 'Clutch' },
+        { value: 'shopper', labelPl: 'Shopper', labelEn: 'Shopper' },
+        { value: 'crossbody', labelPl: 'Na ramie', labelEn: 'Crossbody' },
+        { value: 'wallet', labelPl: 'Portfel', labelEn: 'Wallet' },
+        { value: 'other', labelPl: 'Inne', labelEn: 'Other' },
+      ],
+    },
+    {
+      key: 'brand', type: 'select', labelPl: 'Marka', labelEn: 'Brand',
+      required: false, filterable: true, showOnCard: true,
+      options: [
+        { value: 'louis_vuitton', labelPl: 'Louis Vuitton', labelEn: 'Louis Vuitton' },
+        { value: 'gucci', labelPl: 'Gucci', labelEn: 'Gucci' },
+        { value: 'michael_kors', labelPl: 'Michael Kors', labelEn: 'Michael Kors' },
+        { value: 'guess', labelPl: 'Guess', labelEn: 'Guess' },
+        { value: 'zara', labelPl: 'Zara', labelEn: 'Zara' },
+        { value: 'other', labelPl: 'Inna', labelEn: 'Other' },
+      ],
+    },
+    {
+      key: 'color', type: 'select', labelPl: 'Kolor', labelEn: 'Color',
+      required: false, filterable: true, showOnCard: false,
+      options: [
+        { value: 'black', labelPl: 'Czarny', labelEn: 'Black' },
+        { value: 'brown', labelPl: 'Brazowy', labelEn: 'Brown' },
+        { value: 'beige', labelPl: 'Bezowy', labelEn: 'Beige' },
+        { value: 'white', labelPl: 'Bialy', labelEn: 'White' },
+        { value: 'red', labelPl: 'Czerwony', labelEn: 'Red' },
+        { value: 'pink', labelPl: 'Rozowy', labelEn: 'Pink' },
+        { value: 'blue', labelPl: 'Niebieski', labelEn: 'Blue' },
+        { value: 'green', labelPl: 'Zielony', labelEn: 'Green' },
+        { value: 'other', labelPl: 'Inny', labelEn: 'Other' },
+      ],
+    },
+  ],
+
+  // ========== DEKORACJE ==========
+  dekoracje: [
+    {
+      key: 'decorType', type: 'select', labelPl: 'Typ', labelEn: 'Type',
+      required: false, filterable: true, showOnCard: true,
+      options: [
+        { value: 'wall', labelPl: 'Na sciane', labelEn: 'Wall decor' },
+        { value: 'candles', labelPl: 'Swiece/Lampiony', labelEn: 'Candles/Lanterns' },
+        { value: 'vases', labelPl: 'Wazony', labelEn: 'Vases' },
+        { value: 'textiles', labelPl: 'Tekstylia', labelEn: 'Textiles' },
+        { value: 'frames', labelPl: 'Ramki/Obrazy', labelEn: 'Frames/Pictures' },
+        { value: 'seasonal', labelPl: 'Sezonowe', labelEn: 'Seasonal' },
+        { value: 'other', labelPl: 'Inne', labelEn: 'Other' },
+      ],
+    },
+  ],
+
   // ========== OPONY ==========
   opony: [
     {
@@ -918,9 +1196,74 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttributeDefinition[]> = {
   ],
 };
 
-// Helper: get attributes for a category slug
+// Slug aliases — maps variant slugs to canonical keys in CATEGORY_ATTRIBUTES
+const SLUG_ALIASES: Record<string, string> = {
+  'samochody-osobowe': 'samochody',
+  'auta': 'samochody',
+  'osobowe': 'samochody',
+  'dostawcze': 'samochody',
+  'smartfony': 'telefony',
+  'iphone': 'telefony',
+  'android': 'telefony',
+  'komputery-stacjonarne': 'komputery',
+  'pc': 'komputery',
+  'desktop': 'komputery',
+  'laptopy-notebooki': 'laptopy',
+  'ultrabooki': 'laptopy',
+  'telewizory': 'tv-audio',
+  'glosniki': 'tv-audio',
+  'konsole': 'konsole-gry',
+  'gry-wideo': 'konsole-gry',
+  'playstation': 'konsole-gry',
+  'xbox': 'konsole-gry',
+  'nintendo': 'konsole-gry',
+  'mieszkania-wynajem': 'mieszkania',
+  'mieszkania-sprzedaz': 'mieszkania',
+  'domy-sprzedaz': 'domy',
+  'domy-wynajem': 'domy',
+  'obuwie': 'buty',
+  'obuwie-damskie': 'buty',
+  'obuwie-meskie': 'buty',
+  'ubrania': 'odziez-damska',
+  'ubrania-damskie': 'odziez-damska',
+  'ubrania-meskie': 'odziez-meska',
+  'kamera': 'fotografia',
+  'aparaty': 'fotografia',
+  'drony': 'fotografia',
+  'rower': 'rowery',
+  'rowerki': 'rowery',
+  'sprzet-fitness': 'sprzet-sportowy',
+  'silownia': 'sprzet-sportowy',
+  'zegarek': 'zegarki',
+  'smartwatch': 'zegarki',
+  'pies': 'psy',
+  'szczeniaki': 'psy',
+  'kot': 'koty',
+  'kociaki': 'koty',
+  'ksiazka': 'ksiazki',
+  'instrumenty': 'muzyka',
+  'plyty': 'muzyka',
+  'narzedzia-ogrodowe': 'narzedzia',
+  'elektronarzedzia': 'narzedzia',
+  'czesci-samochodowe': 'czesci',
+  'felgi': 'opony',
+  'kola': 'opony',
+};
+
+// Helper: get attributes for a category slug (with alias support)
 export function getAttributesForCategory(slug: string): AttributeDefinition[] {
-  return CATEGORY_ATTRIBUTES[slug] || [];
+  if (CATEGORY_ATTRIBUTES[slug]) return CATEGORY_ATTRIBUTES[slug];
+
+  // Check aliases
+  const aliasKey = SLUG_ALIASES[slug];
+  if (aliasKey && CATEGORY_ATTRIBUTES[aliasKey]) return CATEGORY_ATTRIBUTES[aliasKey];
+
+  // Try partial match: check if slug starts with or contains any known key
+  for (const key of Object.keys(CATEGORY_ATTRIBUTES)) {
+    if (slug.startsWith(key) || slug.includes(key)) return CATEGORY_ATTRIBUTES[key];
+  }
+
+  return [];
 }
 
 // Helper: get filterable attributes for a category slug

@@ -3,13 +3,23 @@ import { getFilterableAttributes, type AttributeDefinition } from '../../config/
 
 interface CategoryFiltersProps {
   categorySlug: string;
+  parentSlug?: string;
+  grandParentSlug?: string;
   values: Record<string, string>;
   onChange: (values: Record<string, string>) => void;
 }
 
-export default function CategoryFilters({ categorySlug, values, onChange }: CategoryFiltersProps) {
+export default function CategoryFilters({ categorySlug, parentSlug, grandParentSlug, values, onChange }: CategoryFiltersProps) {
   const { lang } = useTranslation();
-  const filterableAttrs = getFilterableAttributes(categorySlug);
+
+  // Try exact slug first, then parent slug, then grandparent slug as fallback
+  let filterableAttrs = getFilterableAttributes(categorySlug);
+  if (filterableAttrs.length === 0 && parentSlug) {
+    filterableAttrs = getFilterableAttributes(parentSlug);
+  }
+  if (filterableAttrs.length === 0 && grandParentSlug) {
+    filterableAttrs = getFilterableAttributes(grandParentSlug);
+  }
 
   if (filterableAttrs.length === 0) return null;
 

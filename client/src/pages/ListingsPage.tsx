@@ -86,9 +86,22 @@ export default function ListingsPage() {
     setAttrFilters(attrs);
   }, []);
 
+  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
+
   useEffect(() => {
     categoriesApi.getAll().then(({ data }) => setCategories(data.categories)).catch(() => {});
   }, []);
+
+  // Load current category by slug (from API, so we get full data including parent chain)
+  useEffect(() => {
+    if (slug) {
+      categoriesApi.getBySlug(slug).then(({ data }) => {
+        setCurrentCategory(data.category);
+      }).catch(() => setCurrentCategory(null));
+    } else {
+      setCurrentCategory(null);
+    }
+  }, [slug]);
 
   // Check if current search is watched
   useEffect(() => {
@@ -176,10 +189,8 @@ export default function ListingsPage() {
     setAttrFilters({});
   }, [slug]);
 
-  const currentCategory = categories.find(c => c.slug === slug);
-  const parentCategory = currentCategory?.parentId
-    ? categories.find(c => c.id === currentCategory.parentId)
-    : undefined;
+  const parentCategory = currentCategory?.parent || undefined;
+  const grandParentCategory = parentCategory?.parent || undefined;
   const isParentCategory = currentCategory && currentCategory.children && currentCategory.children.length > 0;
 
   const getCategoryIcon = (iconName: string) => {
@@ -192,7 +203,7 @@ export default function ListingsPage() {
     c.toLowerCase().includes(locationQuery.toLowerCase())
   ).slice(0, 5);
 
-  // Build breadcrumb items
+  // Build breadcrumb items (supports 3-level deep)
   const getBreadcrumbItems = (): BreadcrumbItem[] => {
     const items: BreadcrumbItem[] = [
       { label: t.listings.title || (lang === 'pl' ? 'Ogłoszenia' : 'Listings'), href: '/ogloszenia' }
@@ -201,6 +212,12 @@ export default function ListingsPage() {
     if (search) {
       items.push({ label: `"${search}"` });
     } else if (currentCategory) {
+      if (grandParentCategory) {
+        items.push({
+          label: lang === 'pl' ? grandParentCategory.namePl : grandParentCategory.nameEn,
+          href: `/kategoria/${grandParentCategory.slug}`
+        });
+      }
       if (parentCategory) {
         items.push({
           label: lang === 'pl' ? parentCategory.namePl : parentCategory.nameEn,
@@ -501,6 +518,8 @@ export default function ListingsPage() {
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                   <CategoryFilters
                     categorySlug={currentCategory.slug}
+                    parentSlug={parentCategory?.slug}
+                    grandParentSlug={grandParentCategory?.slug}
                     values={attrFilters}
                     onChange={setAttrFilters}
                   />
@@ -730,6 +749,8 @@ export default function ListingsPage() {
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                   <CategoryFilters
                     categorySlug={currentCategory.slug}
+                    parentSlug={parentCategory?.slug}
+                    grandParentSlug={grandParentCategory?.slug}
                     values={attrFilters}
                     onChange={setAttrFilters}
                   />
