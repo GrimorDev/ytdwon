@@ -130,15 +130,35 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile search */}
+        {/* Mobile menu */}
         {mobileOpen && (
           <div className="md:hidden pb-4 space-y-3">
             <SearchAutocomplete />
-            {user && (
-              <div className="flex gap-2">
-                <Link to="/dodaj" className="btn-primary !py-2 flex-1 text-center text-sm" onClick={() => setMobileOpen(false)}>
-                  <Plus className="w-4 h-4 inline mr-1" />{t.nav.addListing}
+            {user ? (
+              <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-dark-500">
+                <Link to="/dodaj" className="btn-primary !py-2.5 w-full text-center text-sm flex items-center justify-center gap-1.5" onClick={() => setMobileOpen(false)}>
+                  <Plus className="w-4 h-4" />{t.nav.addListing}
                 </Link>
+                <div className="grid grid-cols-3 gap-2">
+                  <Link to="/ulubione" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
+                    <Heart className="w-5 h-5" />
+                    <span className="text-xs">{t.nav.favorites}</span>
+                  </Link>
+                  <Link to="/wiadomosci" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors relative">
+                    <MessageCircle className="w-5 h-5" />
+                    <span className="text-xs">{t.nav.messages}</span>
+                    {unreadCount > 0 && <span className="absolute top-1 right-1/4 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                  </Link>
+                  <Link to="/moje-ogloszenia" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
+                    <Package className="w-5 h-5" />
+                    <span className="text-xs">{t.nav.myListings}</span>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-dark-500">
+                <Link to="/logowanie" className="btn-secondary !py-2.5 flex-1 text-center text-sm" onClick={() => setMobileOpen(false)}>{t.nav.login}</Link>
+                <Link to="/rejestracja" className="btn-primary !py-2.5 flex-1 text-center text-sm" onClick={() => setMobileOpen(false)}>{t.nav.register}</Link>
               </div>
             )}
           </div>

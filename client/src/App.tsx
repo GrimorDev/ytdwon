@@ -2,6 +2,8 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
+import ScrollToTop from './components/Layout/ScrollToTop';
+import CookieConsent from './components/Layout/CookieConsent';
 import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
@@ -15,6 +17,7 @@ import AccountPage from './pages/AccountPage';
 import PromotePage from './pages/PromotePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import NotFoundPage from './pages/NotFoundPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminListingsPage from './pages/admin/AdminListingsPage';
@@ -49,6 +52,8 @@ function StandardLayout() {
         <Outlet />
       </main>
       <Footer />
+      <ScrollToTop />
+      <CookieConsent />
     </div>
   );
 }
@@ -87,7 +92,7 @@ export default function App() {
         <Route path="/kontakt" element={<ContactPage />} />
         <Route path="/logowanie" element={<LoginPage />} />
         <Route path="/rejestracja" element={<RegisterPage />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

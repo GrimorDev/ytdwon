@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowRight, TrendingUp, Shield, Zap, Star, Plus,
+  ArrowRight, TrendingUp, Shield, Zap, Star, Plus, Clock,
   Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal,
   Package, Monitor, ShoppingBag, PawPrint, BookOpen, Music, Camera, Wrench, Bike, Gem, Watch,
   Gamepad2, Tv, Headphones, Printer, Cpu, Heart, TreePine, Flower2, Palette, Scissors, UtensilsCrossed,
@@ -12,6 +12,7 @@ import ListingCard from '../components/Listing/ListingCard';
 import { useTranslation } from '../i18n';
 import SearchAutocomplete from '../components/Search/SearchAutocomplete';
 import BannerSlider from '../components/Home/BannerSlider';
+import { getViewHistory, type ViewHistoryItem } from '../utils/viewHistory';
 
 const iconMap: Record<string, any> = {
   Smartphone, Car, Home, Sofa, Shirt, Dumbbell, Baby, Briefcase, HandHelping, MoreHorizontal,
@@ -24,6 +25,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [promoted, setPromoted] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recentlyViewed, setRecentlyViewed] = useState<ViewHistoryItem[]>([]);
 
   useEffect(() => {
     Promise.all([
@@ -33,6 +35,9 @@ export default function HomePage() {
       setCategories(catRes.data.categories);
       setPromoted(promRes.data.listings);
     }).catch(() => {}).finally(() => setLoading(false));
+
+    // Load recently viewed from localStorage
+    setRecentlyViewed(getViewHistory().slice(0, 4));
   }, []);
 
   const getCategoryIcon = (iconName: string) => {
@@ -137,6 +142,46 @@ export default function HomePage() {
             </div>
           )}
         </section>
+
+        {/* Recently Viewed */}
+        {recentlyViewed.length > 0 && (
+          <section className="py-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Clock className="w-6 h-6 text-gray-400" />
+                {lang === 'pl' ? 'Ostatnio ogladane' : 'Recently viewed'}
+              </h2>
+              <Link to="/ogloszenia" className="text-primary-500 hover:text-primary-600 flex items-center gap-1 text-sm font-medium">
+                {t.home.seeAll} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {recentlyViewed.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/ogloszenia/${item.id}`}
+                  className="card-hover p-3 flex gap-3 group"
+                >
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                    {item.thumbnailUrl ? (
+                      <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate group-hover:text-primary-500 transition-colors">{item.title}</p>
+                    <p className="text-sm font-bold text-primary-600 dark:text-primary-400 mt-1">
+                      {item.price.toLocaleString('pl-PL')} {item.currency}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Features */}
         <section className="py-12">

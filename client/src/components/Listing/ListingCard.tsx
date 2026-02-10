@@ -257,7 +257,7 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
     <Link to={`/ogloszenia/${listing.id}`} className={`card-hover overflow-hidden group block ${isInactive ? 'opacity-80' : ''}`}>
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-200 dark:bg-gray-800">
         {imageUrl ? (
-          <img src={imageUrl} alt={listing.title} className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${isInactive ? 'grayscale-[30%]' : ''}`} />
+          <img src={imageUrl} alt={listing.title} loading="lazy" className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${isInactive ? 'grayscale-[30%]' : ''}`} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
             <PackageIcon className="w-12 h-12" />
