@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Plus, Sun, Moon, Menu, X, LogOut, Package, Settings, Globe } from 'lucide-react';
+import { Heart, MessageCircle, Plus, Sun, Moon, Menu, X, LogOut, Package, Settings, Globe, Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from '../../i18n';
 import { chatApi } from '../../services/api';
+import { useNotifications } from '../../context/NotificationContext';
 import SearchAutocomplete from '../Search/SearchAutocomplete';
 import Logo from './Logo';
 
@@ -13,6 +14,7 @@ export default function Navbar() {
   const { theme, toggle } = useTheme();
   const { t, lang, setLang } = useTranslation();
   const navigate = useNavigate();
+  const { unreadCount: notifCount } = useNotifications();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -74,6 +76,16 @@ export default function Navbar() {
                   )}
                 </Link>
 
+                {/* Notifications */}
+                <Link to="/powiadomienia" className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors relative hidden sm:block">
+                  <Bell className="w-5 h-5" />
+                  {notifCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {notifCount > 9 ? '9+' : notifCount}
+                    </span>
+                  )}
+                </Link>
+
                 {/* User menu */}
                 <div className="relative">
                   <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors">
@@ -103,6 +115,10 @@ export default function Navbar() {
                         <Link to="/wiadomosci" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
                           <MessageCircle className="w-4 h-4" /> {t.nav.messages}
                           {unreadCount > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
+                        </Link>
+                        <Link to="/powiadomienia" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
+                          <Bell className="w-4 h-4" /> {lang === 'pl' ? 'Powiadomienia' : 'Notifications'}
+                          {notifCount > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{notifCount}</span>}
                         </Link>
                         <Link to="/konto" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
                           <Settings className="w-4 h-4" /> {t.nav.account}
@@ -139,7 +155,7 @@ export default function Navbar() {
                 <Link to="/dodaj" className="btn-primary !py-2.5 w-full text-center text-sm flex items-center justify-center gap-1.5" onClick={() => setMobileOpen(false)}>
                   <Plus className="w-4 h-4" />{t.nav.addListing}
                 </Link>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   <Link to="/ulubione" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
                     <Heart className="w-5 h-5" />
                     <span className="text-xs">{t.nav.favorites}</span>
@@ -148,6 +164,11 @@ export default function Navbar() {
                     <MessageCircle className="w-5 h-5" />
                     <span className="text-xs">{t.nav.messages}</span>
                     {unreadCount > 0 && <span className="absolute top-1 right-1/4 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                  </Link>
+                  <Link to="/powiadomienia" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors relative">
+                    <Bell className="w-5 h-5" />
+                    <span className="text-xs">{lang === 'pl' ? 'Powiadom.' : 'Notifs'}</span>
+                    {notifCount > 0 && <span className="absolute top-1 right-1/4 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{notifCount > 9 ? '9+' : notifCount}</span>}
                   </Link>
                   <Link to="/moje-ogloszenia" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
                     <Package className="w-5 h-5" />

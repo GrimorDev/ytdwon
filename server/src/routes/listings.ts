@@ -3,6 +3,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { authRequired, authOptional, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { getAttributesForCategory, AttributeDefinition } from '../config/categoryAttributes';
+import { notifyListingCreated } from '../utils/notifications';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -491,6 +492,9 @@ router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => 
         category: true,
       },
     });
+
+    // Notify user about listing creation (fire & forget)
+    notifyListingCreated(req.userId!, listing.id, listing.title).catch(() => {});
 
     res.status(201).json({ listing });
   } catch (err) {

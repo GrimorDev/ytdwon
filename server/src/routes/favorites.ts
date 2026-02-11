@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authRequired, AuthRequest } from '../middleware/auth';
+import { notifyListingFavorited } from '../utils/notifications';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -52,6 +53,11 @@ router.post('/:listingId', authRequired, async (req: AuthRequest, res: Response,
       await prisma.favorite.create({
         data: { userId: req.userId!, listingId },
       });
+      // Notify listing owner (fire & forget)
+      const listing = await prisma.listing.findUnique({ where: { id: listingId }, select: { userId: true, title: true } });
+      if (listing && listing.userId !== req.userId) {
+        notifyListingFavorited(listing.userId, listingId, listing.title).catch(() => {});
+      }
       res.json({ favorited: true });
     }
   } catch (err) {

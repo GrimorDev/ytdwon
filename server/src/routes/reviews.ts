@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authRequired, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { notifyNewReview } from '../utils/notifications';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -88,6 +89,12 @@ router.post('/:userId', authRequired, async (req: AuthRequest, res: Response, ne
         reviewer: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
+
+    // Notify the reviewed user (fire & forget)
+    const reviewer = await prisma.user.findUnique({ where: { id: req.userId! }, select: { name: true } });
+    if (reviewer) {
+      notifyNewReview(reviewedId, reviewer.name, rating).catch(() => {});
+    }
 
     res.status(201).json({ review });
   } catch (err) {

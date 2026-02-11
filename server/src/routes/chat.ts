@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authRequired, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { notifyNewMessage } from '../utils/notifications';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -176,6 +177,13 @@ router.post('/', authRequired, async (req: AuthRequest, res: Response, next) => 
       data: { updatedAt: new Date() },
     });
 
+    // Notify the listing owner about new message (fire & forget)
+    const recipientId = listing.userId === req.userId ? (conversation.participant1Id === req.userId ? conversation.participant2Id : conversation.participant1Id) : listing.userId;
+    const sender = await prisma.user.findUnique({ where: { id: req.userId! }, select: { name: true } });
+    if (sender && recipientId !== req.userId) {
+      notifyNewMessage(recipientId, sender.name, conversation.id).catch(() => {});
+    }
+
     res.status(201).json({ conversation: { id: conversation.id }, message: msg });
   } catch (err) {
     next(err);
@@ -215,6 +223,13 @@ router.post('/:id/messages', authRequired, async (req: AuthRequest, res: Respons
       where: { id: conversation.id },
       data: { updatedAt: new Date() },
     });
+
+    // Notify the other participant about new message (fire & forget)
+    const recipientId = conversation.participant1Id === req.userId ? conversation.participant2Id : conversation.participant1Id;
+    const sender = await prisma.user.findUnique({ where: { id: req.userId! }, select: { name: true } });
+    if (sender) {
+      notifyNewMessage(recipientId, sender.name, conversation.id).catch(() => {});
+    }
 
     res.status(201).json({ message });
   } catch (err) {

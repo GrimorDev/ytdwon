@@ -4,6 +4,7 @@ import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import ScrollToTop from './components/Layout/ScrollToTop';
 import CookieConsent from './components/Layout/CookieConsent';
+import ToastContainer from './components/Layout/ToastContainer';
 import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
@@ -18,6 +19,7 @@ import PromotePage from './pages/PromotePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
+import NotificationsPage from './pages/NotificationsPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminListingsPage from './pages/admin/AdminListingsPage';
@@ -54,6 +56,7 @@ function StandardLayout() {
       <Footer />
       <ScrollToTop />
       <CookieConsent />
+      <ToastContainer />
     </div>
   );
 }
@@ -87,6 +90,7 @@ export default function App() {
         <Route path="/uzytkownik/:id" element={<UserProfilePage />} />
         <Route path="/konto" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
         <Route path="/promuj/:id" element={<ProtectedRoute><PromotePage /></ProtectedRoute>} />
+        <Route path="/powiadomienia" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
         <Route path="/regulamin" element={<TermsPage />} />
         <Route path="/polityka-prywatnosci" element={<PrivacyPage />} />
         <Route path="/kontakt" element={<ContactPage />} />

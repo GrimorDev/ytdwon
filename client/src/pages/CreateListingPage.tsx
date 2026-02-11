@@ -4,11 +4,13 @@ import { X, Plus, ImagePlus, Info, CheckCircle2 } from 'lucide-react';
 import { listingsApi, categoriesApi, uploadApi } from '../services/api';
 import type { Category } from '../types';
 import { useTranslation } from '../i18n';
+import { useNotifications } from '../context/NotificationContext';
 import AttributeForm from '../components/Listing/AttributeForm';
 
 export default function CreateListingPage() {
   const { t, lang } = useTranslation();
   const navigate = useNavigate();
+  const { addToast } = useNotifications();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -117,6 +119,13 @@ export default function CreateListingPage() {
         negotiable,
       });
 
+      addToast({
+        type: 'success',
+        title: lang === 'pl' ? 'Ogloszenie dodane!' : 'Listing created!',
+        message: lang === 'pl' ? 'Twoje ogloszenie zostalo pomyslnie opublikowane.' : 'Your listing has been successfully published.',
+        link: `/ogloszenia/${data.listing.id}`,
+        duration: 6000,
+      });
       navigate(`/ogloszenia/${data.listing.id}`);
     } catch (err: any) {
       setError(err.response?.data?.error || t.create.error);

@@ -71,6 +71,7 @@ model User {
   conversations1   Conversation[] @relation("participant1")
   conversations2   Conversation[] @relation("participant2")
   reports          Report[]       @relation("reporter")
+  notifications    Notification[]
 }
 
 model Category {
@@ -245,4 +246,33 @@ model NewsletterSubscriber {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+enum NotificationType {
+  LISTING_CREATED
+  LISTING_PROMOTED
+  PROMOTION_EXPIRING
+  PROMOTION_EXPIRED
+  NEW_MESSAGE
+  NEW_REVIEW
+  LISTING_SOLD
+  LISTING_FAVORITED
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  titlePl   String
+  titleEn   String
+  bodyPl    String?
+  bodyEn    String?
+  link      String?
+  read      Boolean          @default(false)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt(sort: Desc)])
 }

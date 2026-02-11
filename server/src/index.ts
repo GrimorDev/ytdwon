@@ -16,6 +16,7 @@ import { stripeRouter } from './routes/stripe';
 import { reportsRouter } from './routes/reports';
 import { adminRouter } from './routes/admin';
 import { bannersRouter } from './routes/banners';
+import { notificationsRouter } from './routes/notifications';
 import { errorHandler } from './middleware/errorHandler';
 import { setupWebSocket } from './websocket';
 import { startCronJobs } from './services/cronService';
@@ -61,6 +62,7 @@ app.use('/api/stripe', stripeRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/banners', bannersRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

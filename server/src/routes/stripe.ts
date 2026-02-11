@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 import { authRequired, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { notifyListingPromoted } from '../utils/notifications';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -120,14 +121,17 @@ router.post('/webhook', async (req: Request, res: Response) => {
         const promotedUntil = new Date();
         promotedUntil.setDate(promotedUntil.getDate() + promotionDays);
 
-        await prisma.listing.update({
+        const updatedListing = await prisma.listing.update({
           where: { id: listingId },
           data: {
             promoted: true,
             promotedUntil,
           },
+          select: { userId: true, title: true },
         });
         console.log(`Listing ${listingId} promoted until ${promotedUntil.toISOString()}`);
+        // Notify listing owner about promotion (fire & forget)
+        notifyListingPromoted(updatedListing.userId, listingId, updatedListing.title, promotedUntil).catch(() => {});
       }
       break;
     }
