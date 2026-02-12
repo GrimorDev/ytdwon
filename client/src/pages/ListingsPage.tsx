@@ -20,6 +20,7 @@ import { useTranslation } from '../i18n';
 import CategoryFilters from '../components/Listing/CategoryFilters';
 import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrumbs';
 import { addSavedSearch, removeSavedSearch, isSearchSaved, getSavedSearches, type SavedSearch } from '../utils/savedSearches';
+import SEO from '../components/SEO';
 
 // Polish cities for autocomplete
 const POLISH_CITIES = [
@@ -238,8 +239,18 @@ export default function ListingsPage() {
   const activeFiltersCount = [filterCity, filterMinPrice, filterMaxPrice, filterCondition]
     .filter(f => f).length + Object.values(attrFilters).filter(v => v).length;
 
+  const seoTitle = currentCategory
+    ? (lang === 'pl' ? currentCategory.namePl : currentCategory.nameEn) || currentCategory.namePl
+    : searchQuery
+      ? `${t.listings.resultsFor} "${searchQuery}"`
+      : t.listings.title;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
+      <SEO
+        title={seoTitle}
+        description={currentCategory?.descriptionPl || (lang === 'pl' ? 'Przegladaj ogloszenia na Vipile' : 'Browse listings on Vipile')}
+      />
       {/* Search Bar - like OLX */}
       <div className="bg-white dark:bg-dark-600 rounded-xl shadow-sm border border-gray-200 dark:border-dark-500 p-4 mb-6">
         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3">

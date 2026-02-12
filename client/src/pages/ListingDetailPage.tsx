@@ -9,6 +9,7 @@ import AttributeDisplay from '../components/Listing/AttributeDisplay';
 import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrumbs';
 import ListingCard from '../components/Listing/ListingCard';
 import { addToViewHistory } from '../utils/viewHistory';
+import SEO from '../components/SEO';
 
 function getEmbedUrl(url: string): string {
   // YouTube
@@ -283,6 +284,12 @@ export default function ListingDetailPage() {
 
   return (
     <>
+      <SEO
+        title={listing.title}
+        description={listing.description?.substring(0, 160)}
+        image={listing.images?.[0]?.url}
+        type="product"
+      />
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Breadcrumb */}
         {listing.category && (

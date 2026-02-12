@@ -288,4 +288,14 @@ export const newsletterApi = {
   subscribe: (email: string) => api.post<{ message: string }>('/banners/newsletter', { email }),
 };
 
+// Notifications
+export const notificationsApi = {
+  getAll: (page = 1, limit = 20) =>
+    api.get<{ notifications: any[]; unreadCount: number; pagination: any }>(`/notifications?page=${page}&limit=${limit}`),
+  getUnreadCount: () => api.get<{ count: number }>('/notifications/unread-count'),
+  markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllRead: () => api.patch('/notifications/read-all'),
+  delete: (id: string) => api.delete(`/notifications/${id}`),
+};
+
 export default api;

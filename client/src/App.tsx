@@ -20,6 +20,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
 import NotificationsPage from './pages/NotificationsPage';
+import DashboardPage from './pages/DashboardPage';
+import AboutPage from './pages/AboutPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminListingsPage from './pages/admin/AdminListingsPage';
@@ -91,6 +93,8 @@ export default function App() {
         <Route path="/konto" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
         <Route path="/promuj/:id" element={<ProtectedRoute><PromotePage /></ProtectedRoute>} />
         <Route path="/powiadomienia" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+        <Route path="/statystyki" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/o-nas" element={<AboutPage />} />
         <Route path="/regulamin" element={<TermsPage />} />
         <Route path="/polityka-prywatnosci" element={<PrivacyPage />} />
         <Route path="/kontakt" element={<ContactPage />} />

@@ -101,6 +101,7 @@ export default function Footer() {
                   <HelpCircle className="w-3.5 h-3.5" />
                   {isPl ? 'Pomoc i FAQ' : 'Help & FAQ'}
                 </Link>
+                <Link to="/o-nas" className="block hover:text-primary-500 transition-colors">{isPl ? 'O nas' : 'About us'}</Link>
               </div>
             </div>
 

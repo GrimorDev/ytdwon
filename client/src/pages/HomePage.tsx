@@ -11,6 +11,7 @@ import type { Category, Listing } from '../types';
 import ListingCard from '../components/Listing/ListingCard';
 import { useTranslation } from '../i18n';
 import SearchAutocomplete from '../components/Search/SearchAutocomplete';
+import SEO from '../components/SEO';
 import BannerSlider from '../components/Home/BannerSlider';
 import { getViewHistory, type ViewHistoryItem } from '../utils/viewHistory';
 
@@ -47,6 +48,10 @@ export default function HomePage() {
 
   return (
     <div>
+      <SEO
+        title={lang === 'pl' ? 'Kupuj i sprzedawaj lokalnie' : 'Buy and sell locally'}
+        description={lang === 'pl' ? 'Vipile - portal ogloszeniowy. Tysiace ogloszen w jednym miejscu. Kupuj i sprzedawaj lokalnie w calej Polsce.' : 'Vipile - classifieds portal. Thousands of listings in one place. Buy and sell locally across Poland.'}
+      />
       {/* Hero with Banner Slider as background */}
       <BannerSlider>
         <div className="max-w-4xl mx-auto px-4 text-center">
