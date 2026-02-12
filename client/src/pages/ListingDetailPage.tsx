@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag, Copy, Check, ExternalLink, Ban, Maximize2, Flag, X, ArrowLeft, Send, CheckCircle } from 'lucide-react';
+import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag, Copy, Check, ExternalLink, Ban, Flag, X, ArrowLeft, Send, CheckCircle } from 'lucide-react';
 import { listingsApi, favoritesApi, chatApi, reportsApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
@@ -10,6 +10,8 @@ import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrum
 import ListingCard from '../components/Listing/ListingCard';
 import { addToViewHistory } from '../utils/viewHistory';
 import SEO from '../components/SEO';
+import LocationMap from '../components/Location/LocationMap';
+import { findCity } from '../data/polishCities';
 
 function getEmbedUrl(url: string): string {
   // YouTube
@@ -706,72 +708,65 @@ export default function ListingDetailPage() {
               )}
 
               {/* Location block */}
-              {listing.city && (
-                <div className="card !p-6">
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    {t.detail.location}
-                  </h3>
+              {listing.city && (() => {
+                const cityData = listing.latitude && listing.longitude
+                  ? { latitude: listing.latitude, longitude: listing.longitude, voivodeship: findCity(listing.city)?.voivodeship }
+                  : (() => { const c = findCity(listing.city); return c ? { latitude: c.latitude, longitude: c.longitude, voivodeship: c.voivodeship } : null; })();
 
-                  {/* Map */}
-                  {listing.latitude && listing.longitude ? (
-                    <div className="relative rounded-xl overflow-hidden mb-3 group/map">
-                      <iframe
-                        title="location-map"
-                        width="100%"
-                        height="200"
-                        style={{ border: 0 }}
-                        loading="lazy"
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${listing.longitude - 0.01},${listing.latitude - 0.007},${listing.longitude + 0.01},${listing.latitude + 0.007}&layer=mapnik&marker=${listing.latitude},${listing.longitude}`}
-                      />
-                      <a
-                        href={`https://www.openstreetmap.org/?mlat=${listing.latitude}&mlon=${listing.longitude}#map=15/${listing.latitude}/${listing.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/map:bg-black/20 transition-colors cursor-pointer"
+                return (
+                  <div className="card !p-6">
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      {t.detail.location}
+                    </h3>
+
+                    {/* Map */}
+                    {cityData ? (
+                      <div className="mb-3">
+                        <LocationMap
+                          latitude={cityData.latitude}
+                          longitude={cityData.longitude}
+                          city={listing.city}
+                          voivodeship={cityData.voivodeship}
+                        />
+                      </div>
+                    ) : null}
+
+                    {/* Address */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <MapPin className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                        <span>{listing.city}{cityData?.voivodeship ? `, ${cityData.voivodeship}` : ''}</span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const address = listing.city;
+                          try {
+                            if (navigator.clipboard && window.isSecureContext) {
+                              await navigator.clipboard.writeText(address);
+                            } else {
+                              const ta = document.createElement('textarea');
+                              ta.value = address;
+                              ta.style.position = 'fixed';
+                              ta.style.left = '-999999px';
+                              document.body.appendChild(ta);
+                              ta.select();
+                              document.execCommand('copy');
+                              ta.remove();
+                            }
+                            setLocationCopied(true);
+                            setTimeout(() => setLocationCopied(false), 2000);
+                          } catch {}
+                        }}
+                        className="flex items-center gap-1 text-xs text-primary-500 hover:text-primary-600 transition-colors px-2 py-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20"
                       >
-                        <span className="opacity-0 group-hover/map:opacity-100 transition-opacity bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-1.5">
-                          <Maximize2 className="w-4 h-4" />
-                          {lang === 'pl' ? 'Powiększ mapę' : 'Enlarge map'}
-                        </span>
-                      </a>
+                        {locationCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        {locationCopied ? (lang === 'pl' ? 'Skopiowano' : 'Copied') : (lang === 'pl' ? 'Kopiuj' : 'Copy')}
+                      </button>
                     </div>
-                  ) : null}
-
-                  {/* Address */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <MapPin className="w-4 h-4 text-primary-500 flex-shrink-0" />
-                      <span>{listing.city}</span>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        const address = listing.city;
-                        try {
-                          if (navigator.clipboard && window.isSecureContext) {
-                            await navigator.clipboard.writeText(address);
-                          } else {
-                            const ta = document.createElement('textarea');
-                            ta.value = address;
-                            ta.style.position = 'fixed';
-                            ta.style.left = '-999999px';
-                            document.body.appendChild(ta);
-                            ta.select();
-                            document.execCommand('copy');
-                            ta.remove();
-                          }
-                          setLocationCopied(true);
-                          setTimeout(() => setLocationCopied(false), 2000);
-                        } catch {}
-                      }}
-                      className="flex items-center gap-1 text-xs text-primary-500 hover:text-primary-600 transition-colors px-2 py-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20"
-                    >
-                      {locationCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      {locationCopied ? (lang === 'pl' ? 'Skopiowano' : 'Copied') : (lang === 'pl' ? 'Kopiuj' : 'Copy')}
-                    </button>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Safety tip */}
               <div className="card !p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30">

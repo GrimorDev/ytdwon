@@ -5,6 +5,8 @@ import { listingsApi, categoriesApi, uploadApi } from '../services/api';
 import type { Category, Listing } from '../types';
 import { useTranslation } from '../i18n';
 import AttributeForm from '../components/Listing/AttributeForm';
+import CityAutocomplete from '../components/Location/CityAutocomplete';
+import { findCity, type PolishCity } from '../data/polishCities';
 
 export default function EditListingPage() {
   const { t, lang } = useTranslation();
@@ -20,6 +22,7 @@ export default function EditListingPage() {
   const [price, setPrice] = useState('');
   const [condition, setCondition] = useState('USED');
   const [city, setCity] = useState('');
+  const [cityData, setCityData] = useState<PolishCity | undefined>();
   const [categoryId, setCategoryId] = useState('');
   const [status, setStatus] = useState('ACTIVE');
   const [videoUrl, setVideoUrl] = useState('');
@@ -49,6 +52,7 @@ export default function EditListingPage() {
         setPrice(listing.price.toString());
         setCondition(listing.condition);
         setCity(listing.city);
+        setCityData(findCity(listing.city));
         setCategoryId(listing.categoryId);
         setStatus(listing.status);
         setVideoUrl(listing.videoUrl || '');
@@ -114,6 +118,8 @@ export default function EditListingPage() {
         price: parseFloat(price),
         condition,
         city,
+        latitude: cityData?.latitude,
+        longitude: cityData?.longitude,
         categoryId,
         status,
         attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
@@ -249,7 +255,12 @@ export default function EditListingPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">{t.create.cityLabel} *</label>
-            <input value={city} onChange={e => setCity(e.target.value)} className="input-field" placeholder={t.create.cityPlaceholder} required />
+            <CityAutocomplete
+              value={city}
+              onChange={(val, data) => { setCity(val); setCityData(data); }}
+              placeholder={t.create.cityPlaceholder}
+              required
+            />
           </div>
 
           {/* Negotiable toggle */}

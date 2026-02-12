@@ -6,6 +6,8 @@ import type { Category } from '../types';
 import { useTranslation } from '../i18n';
 import { useNotifications } from '../context/NotificationContext';
 import AttributeForm from '../components/Listing/AttributeForm';
+import CityAutocomplete from '../components/Location/CityAutocomplete';
+import { type PolishCity } from '../data/polishCities';
 
 export default function CreateListingPage() {
   const { t, lang } = useTranslation();
@@ -21,6 +23,7 @@ export default function CreateListingPage() {
   const [price, setPrice] = useState('');
   const [condition, setCondition] = useState('USED');
   const [city, setCity] = useState('');
+  const [cityData, setCityData] = useState<PolishCity | undefined>();
   const [categoryId, setCategoryId] = useState('');
   const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [videoUrl, setVideoUrl] = useState('');
@@ -112,6 +115,8 @@ export default function CreateListingPage() {
         price: parseFloat(price),
         condition,
         city,
+        latitude: cityData?.latitude,
+        longitude: cityData?.longitude,
         categoryId,
         attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
         images: imageUrls,
@@ -293,7 +298,12 @@ export default function CreateListingPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">{t.create.cityLabel} *</label>
-            <input value={city} onChange={e => setCity(e.target.value)} className="input-field" placeholder={t.create.cityPlaceholder} required />
+            <CityAutocomplete
+              value={city}
+              onChange={(val, data) => { setCity(val); setCityData(data); }}
+              placeholder={t.create.cityPlaceholder}
+              required
+            />
           </div>
 
           {/* Negotiable toggle */}

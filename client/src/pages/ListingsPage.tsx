@@ -21,14 +21,7 @@ import CategoryFilters from '../components/Listing/CategoryFilters';
 import Breadcrumbs, { type BreadcrumbItem } from '../components/Layout/Breadcrumbs';
 import { addSavedSearch, removeSavedSearch, isSearchSaved, getSavedSearches, type SavedSearch } from '../utils/savedSearches';
 import SEO from '../components/SEO';
-
-// Polish cities for autocomplete
-const POLISH_CITIES = [
-  'Warszawa', 'Kraków', 'Łódź', 'Wrocław', 'Poznań', 'Gdańsk', 'Szczecin', 'Bydgoszcz',
-  'Lublin', 'Białystok', 'Katowice', 'Gdynia', 'Częstochowa', 'Radom', 'Sosnowiec',
-  'Toruń', 'Kielce', 'Rzeszów', 'Gliwice', 'Zabrze', 'Olsztyn', 'Bielsko-Biała',
-  'Bytom', 'Zielona Góra', 'Rybnik', 'Ruda Śląska', 'Opole', 'Tychy', 'Gorzów Wielkopolski'
-];
+import CityAutocomplete from '../components/Location/CityAutocomplete';
 
 export default function ListingsPage() {
   const { t, lang } = useTranslation();
@@ -54,7 +47,6 @@ export default function ListingsPage() {
   // Search bar state
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [locationQuery, setLocationQuery] = useState(searchParams.get('city') || '');
-  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [searchWatched, setSearchWatched] = useState(false);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
 
@@ -199,11 +191,6 @@ export default function ListingsPage() {
     return <Icon className="w-8 h-8" />;
   };
 
-  // Filter city suggestions
-  const citySuggestions = POLISH_CITIES.filter(c =>
-    c.toLowerCase().includes(locationQuery.toLowerCase())
-  ).slice(0, 5);
-
   // Build breadcrumb items (supports 3-level deep)
   const getBreadcrumbItems = (): BreadcrumbItem[] => {
     const items: BreadcrumbItem[] = [
@@ -267,39 +254,12 @@ export default function ListingsPage() {
           </div>
 
           {/* Location input */}
-          <div className="w-full md:w-64 relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
+          <div className="w-full md:w-64">
+            <CityAutocomplete
               value={locationQuery}
-              onChange={(e) => {
-                setLocationQuery(e.target.value);
-                setShowCitySuggestions(true);
-              }}
-              onFocus={() => setShowCitySuggestions(true)}
-              onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+              onChange={(val) => setLocationQuery(val)}
               placeholder={lang === 'pl' ? 'Cała Polska' : 'All Poland'}
-              className="input-field !pl-10 !py-3"
             />
-            {/* City suggestions dropdown */}
-            {showCitySuggestions && citySuggestions.length > 0 && locationQuery && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-dark-600 rounded-lg shadow-lg border border-gray-200 dark:border-dark-500 z-50 overflow-hidden">
-                {citySuggestions.map(city => (
-                  <button
-                    key={city}
-                    type="button"
-                    onClick={() => {
-                      setLocationQuery(city);
-                      setShowCitySuggestions(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-dark-500 flex items-center gap-2"
-                  >
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    {city}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Search button */}
@@ -464,12 +424,10 @@ export default function ListingsPage() {
                 expanded={expandedSections.location}
                 onToggle={() => toggleSection('location')}
               >
-                <input
-                  type="text"
+                <CityAutocomplete
                   value={filterCity}
-                  onChange={(e) => setFilterCity(e.target.value)}
+                  onChange={(val) => setFilterCity(val)}
                   placeholder={lang === 'pl' ? 'Wpisz miasto...' : 'Enter city...'}
-                  className="input-field !py-2 text-sm"
                 />
               </FilterSection>
 
@@ -710,11 +668,9 @@ export default function ListingsPage() {
               {/* Location */}
               <div>
                 <label className="text-sm font-medium mb-1 block">{lang === 'pl' ? 'Lokalizacja' : 'Location'}</label>
-                <input
-                  type="text"
+                <CityAutocomplete
                   value={filterCity}
-                  onChange={(e) => setFilterCity(e.target.value)}
-                  className="input-field !py-2"
+                  onChange={(val) => setFilterCity(val)}
                   placeholder={lang === 'pl' ? 'Wpisz miasto...' : 'Enter city...'}
                 />
               </div>
