@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Nowa paleta kolorów Vipile
+        // Paleta kolorów Vipile
         primary: {
           50: '#f3f1f9',
           100: '#e4e0f0',
@@ -15,22 +15,22 @@ export default {
           500: '#7c6aab',
           600: '#635985', // główny akcent
           700: '#554c70',
-          800: '#443C68', // ciemniejszy akcent
-          900: '#393053', // bardzo ciemny
-          950: '#18122B', // najciemniejszy - tło dark mode
+          800: '#443C68',
+          900: '#393053',
+          950: '#18122B',
         },
-        // Odcienie dla dark mode
+        // Dark mode — neutralne, głębokie odcienie
         dark: {
-          100: '#635985',
-          200: '#554c70',
-          300: '#4a4363',
-          400: '#443C68',
-          500: '#3d3660',
-          600: '#393053',
-          700: '#2d2742',
-          800: '#221d32',
-          900: '#18122B',
-          950: '#110d1f',
+          100: '#4a4a5a',
+          200: '#3a3a4a',
+          300: '#32323e',
+          400: '#2a2a36',
+          500: '#22222c',
+          600: '#18181f',
+          700: '#16161f',
+          800: '#131319',
+          900: '#111118',
+          950: '#0d0d12',
         },
         // Jasny tryb
         light: {

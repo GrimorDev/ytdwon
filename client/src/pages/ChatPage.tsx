@@ -8,7 +8,7 @@ import type { Conversation, Message } from '../types';
 import { useTranslation } from '../i18n';
 
 export default function ChatPage() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { conversationId } = useParams<{ conversationId?: string }>();
   const { user } = useAuth();
   const { socket, connected } = useSocket();
@@ -254,6 +254,26 @@ export default function ChatPage() {
                 })}
                 <div ref={messagesEndRef} />
               </div>
+
+              {/* Quick replies */}
+              {messages.length === 0 && (
+                <div className="px-4 pb-2 flex flex-wrap gap-2">
+                  {[
+                    lang === 'pl' ? 'Czy przedmiot jest jeszcze dostępny?' : 'Is this still available?',
+                    lang === 'pl' ? 'Jaki jest najniższy możliwy cennik?' : 'What is the lowest price?',
+                    lang === 'pl' ? 'Czy możliwy jest odbiór osobisty?' : 'Is pickup possible?',
+                    lang === 'pl' ? 'Czy wysyłka jest możliwa?' : 'Can you ship it?',
+                  ].map((reply, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setNewMessage(reply)}
+                      className="text-xs px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-500 dark:hover:border-primary-600 dark:hover:text-primary-400 transition-colors"
+                    >
+                      {reply}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Input */}
               <form onSubmit={handleSend} className="p-4 border-t border-gray-200 dark:border-gray-700">

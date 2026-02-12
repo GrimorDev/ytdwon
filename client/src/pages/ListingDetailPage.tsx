@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag, Copy, Check, ExternalLink, Ban, Flag, X, ArrowLeft, Send, CheckCircle } from 'lucide-react';
-import { listingsApi, favoritesApi, chatApi, reportsApi } from '../services/api';
+import { Heart, MapPin, Eye, Clock, MessageCircle, Star, ChevronLeft, ChevronRight, Phone, Share2, Shield, Package, Tag, Copy, Check, ExternalLink, Ban, Flag, X, ArrowLeft, Send, CheckCircle, UserPlus, UserCheck, BadgeCheck, TrendingDown, Users } from 'lucide-react';
+import { listingsApi, favoritesApi, chatApi, reportsApi, followsApi, priceHistoryApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 import type { Listing, ReportCategory } from '../types';
@@ -42,6 +42,14 @@ export default function ListingDetailPage() {
   const [copied, setCopied] = useState(false);
   const [locationCopied, setLocationCopied] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
+
+  // Follow state
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  // Price history state
+  const [priceHistory, setPriceHistory] = useState<{ price: number; createdAt: string }[]>([]);
+  const [showPriceHistory, setShowPriceHistory] = useState(false);
 
   // Report modal state
   const [showReportModal, setShowReportModal] = useState(false);
@@ -93,6 +101,35 @@ export default function ListingDetailPage() {
       .catch(() => navigate('/'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Initialize follow state from listing data
+  useEffect(() => {
+    if (listing?.user) {
+      setIsFollowing((listing.user as any).isFollowing || false);
+    }
+  }, [listing]);
+
+  // Fetch price history
+  useEffect(() => {
+    if (id) {
+      priceHistoryApi.get(id).then(({ data }) => {
+        if (data.history && data.history.length > 0) {
+          setPriceHistory(data.history);
+        }
+      }).catch(() => {});
+    }
+  }, [id]);
+
+  const handleFollow = async () => {
+    if (!user || !listing) return;
+    setFollowLoading(true);
+    try {
+      const { data } = await followsApi.toggle(listing.userId);
+      setIsFollowing(data.following);
+    } catch {} finally {
+      setFollowLoading(false);
+    }
+  };
 
   // Close share menu on outside click
   useEffect(() => {
@@ -530,6 +567,65 @@ export default function ListingDetailPage() {
                   )}
                 </div>
 
+                {/* Price history mini-chart */}
+                {priceHistory.length > 0 && (
+                  <div className="pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => setShowPriceHistory(!showPriceHistory)}
+                      className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary-500 transition-colors"
+                    >
+                      <TrendingDown className="w-4 h-4" />
+                      {lang === 'pl' ? 'Historia cen' : 'Price history'} ({priceHistory.length} {lang === 'pl' ? 'zmian' : 'changes'})
+                    </button>
+                    {showPriceHistory && (
+                      <div className="mt-3 space-y-2">
+                        {/* SVG mini chart */}
+                        <div className="h-16 rounded-lg overflow-hidden bg-gray-50 dark:bg-white/5 p-2">
+                          <svg viewBox="0 0 300 50" className="w-full h-full" preserveAspectRatio="none">
+                            {(() => {
+                              const allPrices = [...priceHistory.map(p => p.price), listing.price];
+                              const minP = Math.min(...allPrices);
+                              const maxP = Math.max(...allPrices);
+                              const range = maxP - minP || 1;
+                              const points = allPrices.map((p, i) => {
+                                const x = (i / (allPrices.length - 1)) * 300;
+                                const y = 50 - ((p - minP) / range) * 45 - 2.5;
+                                return `${x},${y}`;
+                              }).join(' ');
+                              return (
+                                <>
+                                  <polyline
+                                    points={points}
+                                    fill="none"
+                                    stroke="#7c6aab"
+                                    strokeWidth="2"
+                                    strokeLinejoin="round"
+                                    strokeLinecap="round"
+                                  />
+                                  {allPrices.map((_, i) => {
+                                    const x = (i / (allPrices.length - 1)) * 300;
+                                    const y = 50 - ((allPrices[i] - minP) / range) * 45 - 2.5;
+                                    return <circle key={i} cx={x} cy={y} r="3" fill={i === allPrices.length - 1 ? '#635985' : '#9181bd'} />;
+                                  })}
+                                </>
+                              );
+                            })()}
+                          </svg>
+                        </div>
+                        {/* Price list */}
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {[...priceHistory].reverse().map((p, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">{new Date(p.createdAt).toLocaleDateString('pl-PL')}</span>
+                              <span className="font-medium">{p.price.toLocaleString('pl-PL')} {listing.currency}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Meta info */}
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
@@ -626,38 +722,85 @@ export default function ListingDetailPage() {
                 <div className="card !p-6">
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">{t.detail.seller}</h3>
                   <Link to={`/uzytkownik/${listing.user.id}`} className="flex items-center gap-3 group">
-                    {listing.user.avatarUrl ? (
-                      <img src={listing.user.avatarUrl} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-700" />
-                    ) : (
-                      <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center ring-2 ring-gray-100 dark:ring-gray-700">
-                        <span className="text-white font-bold text-lg">{listing.user.name[0].toUpperCase()}</span>
-                      </div>
-                    )}
+                    <div className="relative">
+                      {listing.user.avatarUrl ? (
+                        <img src={listing.user.avatarUrl} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-700" />
+                      ) : (
+                        <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center ring-2 ring-gray-100 dark:ring-gray-700">
+                          <span className="text-white font-bold text-lg">{listing.user.name[0].toUpperCase()}</span>
+                        </div>
+                      )}
+                      {listing.user.isVerified && (
+                        <div className="absolute -bottom-0.5 -right-0.5 bg-blue-500 rounded-full p-0.5">
+                          <BadgeCheck className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1">
-                      <p className="font-semibold group-hover:text-primary-500 transition-colors">{listing.user.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold group-hover:text-primary-500 transition-colors">{listing.user.name}</p>
+                        {listing.user.isVerified && (
+                          <span className="text-xs text-blue-500 font-medium">{lang === 'pl' ? 'Zweryfikowany' : 'Verified'}</span>
+                        )}
+                      </div>
                       {listing.user.city && (
                         <p className="text-sm text-gray-500 flex items-center gap-1">
                           <MapPin className="w-3 h-3" /> {listing.user.city}
                         </p>
                       )}
-                      {listing.user.avgRating ? (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                          <span className="text-sm font-medium">{listing.user.avgRating.toFixed(1)}</span>
-                          {listing.user.reviewsCount !== undefined && (
-                            <span className="text-xs text-gray-500">({listing.user.reviewsCount} {t.user.reviews})</span>
-                          )}
-                        </div>
-                      ) : null}
+                      <div className="flex items-center gap-3 mt-0.5">
+                        {listing.user.avgRating ? (
+                          <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                            <span className="text-sm font-medium">{listing.user.avgRating.toFixed(1)}</span>
+                            {listing.user.reviewsCount !== undefined && (
+                              <span className="text-xs text-gray-500">({listing.user.reviewsCount})</span>
+                            )}
+                          </div>
+                        ) : null}
+                        {(listing.user as any).followersCount > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-gray-500">
+                            <Users className="w-3 h-3" />
+                            {(listing.user as any).followersCount} {lang === 'pl' ? 'obserwujących' : 'followers'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
                   </Link>
 
-                  {/* Phone button */}
-                  {listing.user.phone && (
+                  {/* Follow + Phone buttons */}
+                  {user && user.id !== listing.userId && (
+                    <div className="flex gap-2 mt-4">
+                      <button
+                        onClick={handleFollow}
+                        disabled={followLoading}
+                        className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 font-medium transition-all text-sm border ${
+                          isFollowing
+                            ? 'bg-primary-50 dark:bg-primary-900/10 text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800'
+                            : 'bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700'
+                        }`}
+                      >
+                        {isFollowing ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                        {isFollowing ? (lang === 'pl' ? 'Obserwujesz' : 'Following') : (lang === 'pl' ? 'Obserwuj' : 'Follow')}
+                      </button>
+                      {listing.user.phone && (
+                        <button
+                          onClick={() => setShowPhone(!showPhone)}
+                          className="flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 font-medium transition-all text-sm bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/20"
+                        >
+                          <Phone className="w-4 h-4" />
+                          {showPhone ? listing.user.phone : t.detail.showPhone}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Phone only for non-logged or owner */}
+                  {(!user || user.id === listing.userId) && listing.user.phone && (
                     <button
                       onClick={() => setShowPhone(!showPhone)}
-                      className="w-full mt-4 py-3 rounded-xl flex items-center justify-center gap-2 font-medium transition-all bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30"
+                      className="w-full mt-4 py-3 rounded-xl flex items-center justify-center gap-2 font-medium transition-all text-sm bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/20"
                     >
                       <Phone className="w-4 h-4" />
                       {showPhone ? listing.user.phone : t.detail.showPhone}

@@ -56,6 +56,7 @@ model User {
   city             String?
   latitude         Float?
   longitude        Float?
+  isVerified       Boolean        @default(false)
   plan             Plan           @default(FREE)
   role             Role           @default(USER)
   blocked          Boolean        @default(false)
@@ -72,6 +73,20 @@ model User {
   conversations2   Conversation[] @relation("participant2")
   reports          Report[]       @relation("reporter")
   notifications    Notification[]
+  followers        Follow[]       @relation("following")
+  following        Follow[]       @relation("follower")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
 }
 
 model Category {

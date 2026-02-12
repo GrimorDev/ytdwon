@@ -36,9 +36,9 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
 
   const conditionColor = (c: string) => {
     switch (c) {
-      case 'NEW': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-      case 'USED': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-      case 'DAMAGED': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
+      case 'NEW': return 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400';
+      case 'USED': return 'bg-gray-100 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400';
+      case 'DAMAGED': return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -130,12 +130,12 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
               </span>
             )}
             {isNew && (
-              <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full shadow">
+              <span className="px-2 py-0.5 bg-green-500/90 text-white text-xs font-bold rounded-full">
                 {t.home.badgeNew}
               </span>
             )}
             {isHot && !isNew && (
-              <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full shadow flex items-center gap-0.5">
+              <span className="px-2 py-0.5 bg-orange-500/90 text-white text-xs font-bold rounded-full flex items-center gap-0.5">
                 🔥 {t.home.badgeHot}
               </span>
             )}
@@ -174,7 +174,7 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
               {pills.map((pill, idx) => (
                 <span
                   key={idx}
-                  className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded"
+                  className="px-2 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 text-xs rounded"
                 >
                   {pill}
                 </span>
@@ -274,12 +274,12 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
             </span>
           )}
           {isNew && (
-            <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full shadow">
+            <span className="px-2 py-0.5 bg-green-500/90 text-white text-xs font-bold rounded-full">
               {t.home.badgeNew}
             </span>
           )}
           {isHot && !isNew && (
-            <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full shadow flex items-center gap-0.5">
+            <span className="px-2 py-0.5 bg-orange-500/90 text-white text-xs font-bold rounded-full flex items-center gap-0.5">
               🔥 {t.home.badgeHot}
             </span>
           )}
@@ -329,7 +329,7 @@ export default function ListingCard({ listing, viewMode = 'grid', onFavoriteChan
         {pills.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {pills.map((pill, idx) => (
-              <span key={idx} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] rounded-full">
+              <span key={idx} className="px-2 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 text-[10px] rounded-full">
                 {pill}
               </span>
             ))}

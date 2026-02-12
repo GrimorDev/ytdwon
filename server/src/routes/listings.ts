@@ -174,7 +174,7 @@ router.get('/', authOptional, async (req: AuthRequest, res: Response, next) => {
     const includeFields = {
       images: { orderBy: { order: 'asc' } as const, take: 1 },
       category: { select: { name: true, slug: true, namePl: true, nameEn: true } },
-      user: { select: { id: true, name: true, city: true, avatarUrl: true } },
+      user: { select: { id: true, name: true, city: true, avatarUrl: true, isVerified: true } },
       _count: { select: { favorites: true } },
     };
 
@@ -251,7 +251,7 @@ router.get('/promoted', authOptional, async (req: AuthRequest, res: Response, ne
       include: {
         images: { orderBy: { order: 'asc' }, take: 1 },
         category: { select: { name: true, slug: true, namePl: true, nameEn: true } },
-        user: { select: { id: true, name: true, city: true, avatarUrl: true } },
+        user: { select: { id: true, name: true, city: true, avatarUrl: true, isVerified: true } },
         _count: { select: { favorites: true } },
       },
     });
@@ -365,9 +365,9 @@ router.get('/:id', authOptional, async (req: AuthRequest, res: Response, next) =
         },
         user: {
           select: {
-            id: true, name: true, city: true, avatarUrl: true,
+            id: true, name: true, city: true, avatarUrl: true, isVerified: true,
             createdAt: true, phone: true,
-            _count: { select: { listings: true, reviewsReceived: true } },
+            _count: { select: { listings: true, reviewsReceived: true, followers: true } },
           },
         },
         _count: { select: { favorites: true } },
@@ -401,6 +401,15 @@ router.get('/:id', authOptional, async (req: AuthRequest, res: Response, next) =
       _avg: { rating: true },
     });
 
+    // Check if current user follows seller
+    let isFollowing = false;
+    if (req.userId && req.userId !== listing.userId) {
+      const follow = await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: req.userId, followingId: listing.userId } },
+      });
+      isFollowing = !!follow;
+    }
+
     const userWithCounts = {
       id: listing.user.id,
       name: listing.user.name,
@@ -408,9 +417,12 @@ router.get('/:id', authOptional, async (req: AuthRequest, res: Response, next) =
       avatarUrl: listing.user.avatarUrl,
       createdAt: listing.user.createdAt,
       phone: listing.user.phone,
+      isVerified: (listing.user as any).isVerified || false,
       avgRating: avgRating._avg?.rating || 0,
       listingsCount: (listing.user as any)._count?.listings || 0,
       reviewsCount: (listing.user as any)._count?.reviewsReceived || 0,
+      followersCount: (listing.user as any)._count?.followers || 0,
+      isFollowing,
     };
 
     res.json({
@@ -657,6 +669,28 @@ router.patch('/:id/status', authRequired, async (req: AuthRequest, res: Response
     });
 
     res.json({ listing });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get price history for a listing
+router.get('/:id/price-history', async (req, res, next) => {
+  try {
+    const id = req.params.id as string;
+    const history = await prisma.priceHistory.findMany({
+      where: { listingId: id },
+      orderBy: { createdAt: 'asc' },
+      select: { price: true, createdAt: true },
+    });
+
+    // Also get current price
+    const listing = await prisma.listing.findUnique({
+      where: { id },
+      select: { price: true, createdAt: true },
+    });
+
+    res.json({ history, currentPrice: listing?.price });
   } catch (err) {
     next(err);
   }

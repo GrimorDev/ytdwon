@@ -44,12 +44,12 @@ export default function Navbar() {
           {/* Desktop actions */}
           <div className="flex items-center gap-2">
             {/* Language toggle */}
-            <button onClick={() => setLang(lang === 'pl' ? 'en' : 'pl')} className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors" title={lang === 'pl' ? 'English' : 'Polski'}>
+            <button onClick={() => setLang(lang === 'pl' ? 'en' : 'pl')} className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500 transition-colors" title={lang === 'pl' ? 'English' : 'Polski'}>
               <Globe className="w-5 h-5" />
             </button>
 
             {/* Theme toggle */}
-            <button onClick={toggle} className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors">
+            <button onClick={toggle} className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500 transition-colors">
               {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-primary-600" />}
             </button>
 
@@ -62,12 +62,12 @@ export default function Navbar() {
                 </Link>
 
                 {/* Favorites */}
-                <Link to="/ulubione" className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors hidden sm:block">
+                <Link to="/ulubione" className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500 transition-colors hidden sm:block">
                   <Heart className="w-5 h-5" />
                 </Link>
 
                 {/* Messages */}
-                <Link to="/wiadomosci" className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors relative hidden sm:block">
+                <Link to="/wiadomosci" className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500 transition-colors relative hidden sm:block">
                   <MessageCircle className="w-5 h-5" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -77,7 +77,7 @@ export default function Navbar() {
                 </Link>
 
                 {/* Notifications */}
-                <Link to="/powiadomienia" className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors relative hidden sm:block">
+                <Link to="/powiadomienia" className="p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500 transition-colors relative hidden sm:block">
                   <Bell className="w-5 h-5" />
                   {notifCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -88,7 +88,7 @@ export default function Navbar() {
 
                 {/* User menu */}
                 <div className="relative">
-                  <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600 transition-colors">
+                  <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 p-2 rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500 transition-colors">
                     {user.avatarUrl ? (
                       <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover ring-2 ring-primary-400/30" />
                     ) : (
@@ -106,21 +106,21 @@ export default function Navbar() {
                           <p className="font-semibold text-sm">{user.name}</p>
                           <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
-                        <Link to="/moje-ogloszenia" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
+                        <Link to="/moje-ogloszenia" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500">
                           <Package className="w-4 h-4" /> {t.nav.myListings}
                         </Link>
-                        <Link to="/ulubione" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
+                        <Link to="/ulubione" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500">
                           <Heart className="w-4 h-4" /> {t.nav.favorites}
                         </Link>
-                        <Link to="/wiadomosci" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
+                        <Link to="/wiadomosci" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500">
                           <MessageCircle className="w-4 h-4" /> {t.nav.messages}
                           {unreadCount > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
                         </Link>
-                        <Link to="/powiadomienia" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
+                        <Link to="/powiadomienia" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500">
                           <Bell className="w-4 h-4" /> {lang === 'pl' ? 'Powiadomienia' : 'Notifications'}
                           {notifCount > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{notifCount}</span>}
                         </Link>
-                        <Link to="/konto" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-600">
+                        <Link to="/konto" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-primary-100 dark:hover:bg-dark-500">
                           <Settings className="w-4 h-4" /> {t.nav.account}
                         </Link>
                         <hr className="my-1 border-gray-200 dark:border-dark-500" />
@@ -156,21 +156,21 @@ export default function Navbar() {
                   <Plus className="w-4 h-4" />{t.nav.addListing}
                 </Link>
                 <div className="grid grid-cols-4 gap-2">
-                  <Link to="/ulubione" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
+                  <Link to="/ulubione" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-white/5 hover:bg-primary-50 dark:hover:bg-white/10 transition-colors">
                     <Heart className="w-5 h-5" />
                     <span className="text-xs">{t.nav.favorites}</span>
                   </Link>
-                  <Link to="/wiadomosci" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors relative">
+                  <Link to="/wiadomosci" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-white/5 hover:bg-primary-50 dark:hover:bg-white/10 transition-colors relative">
                     <MessageCircle className="w-5 h-5" />
                     <span className="text-xs">{t.nav.messages}</span>
                     {unreadCount > 0 && <span className="absolute top-1 right-1/4 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
                   </Link>
-                  <Link to="/powiadomienia" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors relative">
+                  <Link to="/powiadomienia" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-white/5 hover:bg-primary-50 dark:hover:bg-white/10 transition-colors relative">
                     <Bell className="w-5 h-5" />
                     <span className="text-xs">{lang === 'pl' ? 'Powiadom.' : 'Notifs'}</span>
                     {notifCount > 0 && <span className="absolute top-1 right-1/4 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{notifCount > 9 ? '9+' : notifCount}</span>}
                   </Link>
-                  <Link to="/moje-ogloszenia" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-dark-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
+                  <Link to="/moje-ogloszenia" onClick={() => setMobileOpen(false)} className="flex flex-col items-center gap-1 p-2.5 rounded-lg bg-gray-50 dark:bg-white/5 hover:bg-primary-50 dark:hover:bg-white/10 transition-colors">
                     <Package className="w-5 h-5" />
                     <span className="text-xs">{t.nav.myListings}</span>
                   </Link>

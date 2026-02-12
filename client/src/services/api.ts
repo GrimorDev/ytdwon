@@ -298,4 +298,17 @@ export const notificationsApi = {
   delete: (id: string) => api.delete(`/notifications/${id}`),
 };
 
+// Follows
+export const followsApi = {
+  toggle: (userId: string) => api.post<{ following: boolean }>(`/follows/${userId}`),
+  check: (userId: string) => api.get<{ following: boolean }>(`/follows/check/${userId}`),
+  count: (userId: string) => api.get<{ followersCount: number; followingCount: number }>(`/follows/count/${userId}`),
+  getMyFollows: () => api.get<{ follows: any[] }>('/follows/my'),
+};
+
+// Price History
+export const priceHistoryApi = {
+  get: (listingId: string) => api.get<{ history: { price: number; createdAt: string }[]; currentPrice: number }>(`/listings/${listingId}/price-history`),
+};
+
 export default api;

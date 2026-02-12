@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 /* ========================================
-   VIPILE - Nowa Kolorystyka
-   Dark: #635985, #443C68, #393053, #18122B
+   VIPILE - Refined Color System
+   Dark: deeper, more neutral dark tones
    ======================================== */
 
-/* Dark theme (default) */
+/* Dark theme */
 html.dark body {
-  background-color: #18122B;
-  color: #e8e4f0;
+  background-color: #111118;
+  color: #e4e2e9;
 }
 
 /* Light theme */
@@ -53,17 +53,17 @@ body {
     @apply text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm;
   }
 
-  /* ===== DARK MODE ===== */
+  /* ===== DARK MODE — deeper, neutral ===== */
   html.dark .btn-secondary {
-    background-color: #393053;
+    background-color: #1e1e28;
     @apply text-gray-200 hover:bg-opacity-80;
   }
   html.dark .btn-secondary:hover {
-    background-color: #443C68;
+    background-color: #2a2a36;
   }
 
   html.dark .btn-outline {
-    border-color: #635985;
+    border-color: #3a3a4a;
     color: #9181bd;
   }
   html.dark .btn-outline:hover {
@@ -72,46 +72,46 @@ body {
   }
 
   html.dark .input-field {
-    background-color: #221d32;
-    border: 1px solid #393053;
+    background-color: #16161f;
+    border: 1px solid #2a2a36;
     @apply w-full rounded-lg px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all;
     --tw-ring-color: #635985;
   }
   html.dark .input-field:focus {
-    border-color: #635985;
+    border-color: #4a4a5a;
   }
 
   html.dark .card {
-    background-color: #221d32;
-    border: 1px solid #393053;
+    background-color: #18181f;
+    border: 1px solid #2a2a36;
     @apply rounded-xl p-6;
   }
 
   html.dark .card-hover {
-    background-color: #221d32;
-    border: 1px solid #393053;
+    background-color: #18181f;
+    border: 1px solid #2a2a36;
     @apply rounded-xl transition-all duration-200;
   }
   html.dark .card-hover:hover {
-    border-color: #635985;
-    box-shadow: 0 10px 40px -10px rgba(99, 89, 133, 0.3);
+    border-color: #4a4a5a;
+    box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
   }
 
   html.dark .nav-bar {
-    background-color: rgba(24, 18, 43, 0.95);
+    background-color: rgba(17, 17, 24, 0.95);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid #393053;
+    border-bottom: 1px solid #2a2a36;
   }
 
   html.dark .footer-bar {
-    background-color: #18122B;
-    border-top: 1px solid #393053;
+    background-color: #111118;
+    border-top: 1px solid #2a2a36;
     @apply text-gray-400;
   }
 
   html.dark .sidebar {
-    background-color: #221d32;
-    border: 1px solid #393053;
+    background-color: #18181f;
+    border: 1px solid #2a2a36;
     @apply rounded-xl;
   }
 
@@ -175,14 +175,14 @@ html.dark ::-webkit-scrollbar {
   height: 8px;
 }
 html.dark ::-webkit-scrollbar-track {
-  background: #18122B;
+  background: #111118;
 }
 html.dark ::-webkit-scrollbar-thumb {
-  background: #393053;
+  background: #2a2a36;
   border-radius: 4px;
 }
 html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #443C68;
+  background: #3a3a4a;
 }
 
 /* ===== SELECTION ===== */
@@ -198,7 +198,7 @@ html.light ::selection {
 /* ===== CUSTOM ACCENT COLORS ===== */
 html.dark .text-accent { color: #9181bd; }
 html.dark .bg-accent { background-color: #635985; }
-html.dark .border-accent { border-color: #635985; }
+html.dark .border-accent { border-color: #3a3a4a; }
 
 html.light .text-accent { color: #635985; }
 html.light .bg-accent { background-color: #635985; }
